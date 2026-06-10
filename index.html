@@ -41,6 +41,22 @@
     .animate-in.zoom-in-95 { animation: zoomIn 0.3s ease-out forwards; }
     .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     .animate-spin { animation: spin 1s linear infinite; }
+
+    /* 自訂檔案上傳按鈕樣式 */
+    input[type="file"]::file-selector-button {
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #cbd5e1;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      margin-right: 1rem;
+      transition: all 0.2s;
+    }
+    input[type="file"]::file-selector-button:hover {
+      background: #334155;
+      color: #f8fafc;
+    }
   </style>
 
   <!-- 全域錯誤捕捉器 -->
@@ -123,6 +139,10 @@
     const Database = (p) => <Icon name="database" {...p} />;
     const Video = (p) => <Icon name="videocam" {...p} />;
     const Loader = (p) => <Icon name="sync" className="animate-spin" {...p} />;
+    const Upload = (p) => <Icon name="upload" {...p} />;
+    const Download = (p) => <Icon name="download" {...p} />;
+    const Mail = (p) => <Icon name="mail" {...p} />;
+    const Event = (p) => <Icon name="event" {...p} />;
 
     function App() {
       const [activeTab, setActiveTab] = useState('home');
@@ -135,6 +155,11 @@
       const [commentInput, setCommentInput] = useState('');
       const [showSuccessMsg, setShowSuccessMsg] = useState(false);
 
+      // 說明會報名的 State
+      const [registrationProposal, setRegistrationProposal] = useState(null);
+      const [regForm, setRegForm] = useState({ name: '', email: '', session: '' });
+      const [regStatus, setRegStatus] = useState('idle'); // idle, loading, success
+
       // 儲存市民自行發起的審核中提案
       const [userSubmittedProposals, setUserSubmittedProposals] = useState([]);
 
@@ -146,6 +171,7 @@
       const [painPointInput, setPainPointInput] = useState('');
       const [solutionInput, setSolutionInput] = useState('');
       const [showAiSuggest, setShowAiSuggest] = useState(false);
+      const [draftFileName, setDraftFileName] = useState(''); // 模擬檔案上傳
 
       // 追蹤頁面的 State
       const [searchQuery, setSearchQuery] = useState('');
@@ -366,6 +392,24 @@
         setHasReadDraft(false);
       };
 
+      const handleOpenRegistration = (proposal) => {
+        setRegistrationProposal(proposal);
+        setRegStatus('idle');
+        setRegForm({ name: '', email: '', session: '' });
+      };
+
+      const handleCloseRegistration = () => {
+        setRegistrationProposal(null);
+      };
+
+      const handleSubmitRegistration = () => {
+        if(!regForm.name || !regForm.email || !regForm.session) return;
+        setRegStatus('loading');
+        setTimeout(() => {
+          setRegStatus('success');
+        }, 1500);
+      };
+
       const handlePainPointChange = (e) => {
         const val = e.target.value;
         setPainPointInput(val);
@@ -373,6 +417,12 @@
           setShowAiSuggest(true);
         } else {
           setShowAiSuggest(false);
+        }
+      };
+
+      const handleFileUpload = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          setDraftFileName(e.target.files[0].name);
         }
       };
 
@@ -399,7 +449,7 @@
             feasibilityScore: '-',
             createdAt: new Date().toISOString(),
             isReviewing: true, // 加上審核中標記
-            progress: { endorsements: 0, briefingCompleted: false, draftUploaded: false }
+            progress: { endorsements: 0, briefingCompleted: false, draftUploaded: !!draftFileName }
           };
           
           setUserSubmittedProposals([newProposal, ...userSubmittedProposals]);
@@ -410,6 +460,7 @@
           setSdgInput('');
           setPainPointInput('');
           setSolutionInput('');
+          setDraftFileName('');
         }, 2000);
       };
 
@@ -630,7 +681,7 @@
                                   </button>
                                   
                                   <button 
-                                    onClick={() => window.open('https://meet.google.com/xxx-xxxx-xxx', '_blank')}
+                                    onClick={() => handleOpenRegistration(poc)}
                                     className="flex-1 min-w-[200px] px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 group shadow-lg shadow-blue-900/30"
                                   >
                                     <Video size={18} className="group-hover:scale-110 transition-transform" /> 
@@ -674,7 +725,7 @@
                 </section>
 
                 {/* Other Proposals Grid (研議中提案) */}
-                <section className="pt-8 border-t border-slate-800">
+                <section id="other-proposals" className="pt-8 border-t border-slate-800 scroll-mt-24">
                   <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
                     <div>
                       <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
@@ -804,7 +855,7 @@
                                 <PenTool size={14} /> 閱讀草案與評分
                               </button>
                               <button 
-                                onClick={() => window.open('https://meet.google.com/xxx-xxxx-xxx', '_blank')}
+                                onClick={() => handleOpenRegistration(prop)}
                                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
                               >
                                 <Video size={14} /> 報名說明會
@@ -1057,6 +1108,7 @@
                       setSdgInput('');
                       setPainPointInput('');
                       setSolutionInput('');
+                      setDraftFileName('');
                       setShowAiSuggest(false);
                       setShowSubmitModal(true);
                     }}
@@ -1138,10 +1190,15 @@
                             </div>
                             
                             <h4 className="text-lg font-bold text-white mb-3">📄 完整提案草案</h4>
-                            <div className="text-sm text-slate-300 space-y-4 leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-3">
+                            <div className="text-sm text-slate-300 space-y-4 leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
                               <p><strong className="text-emerald-400">一、 計畫緣起與痛點分析：</strong><br/>{scoringProposal.content || scoringProposal.solution}</p>
-                              <p><strong className="text-emerald-400">二、 具體執行方案：</strong><br/>我們將針對選定區域進行實體與機制上的雙軌改造，前期邀請利害關係人召開說明會，中期導入青農技術與志工培訓，建立永續運作之生態系。</p>
-                              <p><strong className="text-emerald-400">三、 預期效益：</strong><br/>短期建立示範點，驗證可行性；長期推廣至全市各區，建立一套可複製的公民協作SOP，並預期節省 30% 以上之市府既有維護預算。</p>
+                              <p><strong className="text-emerald-400">二、 具體執行方案：</strong><br/>我們將針對選定區域進行實體與機制上的雙軌改造，前期邀請利害關係人召開說明會，中期導入專業技術與志工培訓，建立永續運作之生態系。</p>
+                              <p><strong className="text-emerald-400">三、 預期效益：</strong><br/>短期建立示範點，驗證可行性；長期推廣至全市各區，建立一套可複製的公民協作SOP，並預期達成實質社會影響力。</p>
+                              <p><strong className="text-emerald-400">四、 附件資料：</strong><br/>
+                                <a href="#" className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 mt-2 bg-blue-900/30 px-3 py-1.5 rounded border border-blue-500/30">
+                                  <FileText size={14} /> 點此檢視完整提案企劃書.pdf
+                                </a>
+                              </p>
                             </div>
                           </div>
                           
@@ -1225,6 +1282,114 @@
                     <p className="text-center text-[11px] text-slate-500 mt-3">
                       送出後即代表您支持此提案進入下一階段的討論與實踐。
                     </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* === Modal: 說明會報名視窗 === */}
+          {registrationProposal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative flex flex-col">
+                
+                <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900/50 shrink-0">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Video size={18} className="text-blue-500" />
+                    報名提案說明會
+                  </h3>
+                  <button 
+                    onClick={handleCloseRegistration}
+                    className="text-slate-400 hover:text-white transition-colors p-1 rounded-full hover:bg-slate-800"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  {regStatus === 'success' ? (
+                    <div className="py-8 text-center flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+                      <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
+                        <CheckCircle2 size={32} className="text-blue-500" />
+                      </div>
+                      <h4 className="text-xl font-bold text-white mb-2">報名成功！</h4>
+                      <p className="text-slate-400 text-sm max-w-xs mx-auto">
+                        會議連結與行前通知已發送至：<br/>
+                        <strong className="text-blue-400 block mt-2">{regForm.email}</strong>
+                      </p>
+                      <button 
+                        onClick={handleCloseRegistration}
+                        className="mt-6 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors text-sm font-bold border border-slate-700"
+                      >
+                        關閉視窗
+                      </button>
+                    </div>
+                  ) : regStatus === 'loading' ? (
+                    <div className="py-16 text-center flex flex-col items-center justify-center animate-in fade-in">
+                      <Loader size={40} className="text-blue-500 mb-4" />
+                      <p className="text-slate-400 text-sm">正在為您保留名額並寄送通知信...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-5 animate-in fade-in">
+                      <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800 text-center">
+                        <p className="text-xs text-slate-500 mb-1">您即將報名的提案說明會</p>
+                        <h4 className="text-blue-400 font-bold text-md">{registrationProposal.title}</h4>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-slate-200 mb-2">請選擇參加場次 <span className="text-rose-500">*</span></label>
+                        <select 
+                          value={regForm.session}
+                          onChange={(e) => setRegForm({...regForm, session: e.target.value})}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none"
+                        >
+                          <option value="">請選擇場次</option>
+                          <option value="線上場次一">🟢 線上場次一 (2026/06/25 19:00 Google Meet)</option>
+                          <option value="線上場次二">🟢 線上場次二 (2026/06/27 14:00 Google Meet)</option>
+                          <option value="實體場次">🏢 實體場次 (2026/06/30 10:00 桃園青年局)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-slate-200 mb-2">您的暱稱 <span className="text-rose-500">*</span></label>
+                        <input 
+                          type="text" 
+                          value={regForm.name}
+                          onChange={(e) => setRegForm({...regForm, name: e.target.value})}
+                          placeholder="例如：中壢王先生" 
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-slate-200 mb-2">您的電子信箱 <span className="text-rose-500">*</span></label>
+                        <input 
+                          type="email" 
+                          value={regForm.email}
+                          onChange={(e) => setRegForm({...regForm, email: e.target.value})}
+                          placeholder="會議連結將會寄送到此信箱" 
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" 
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {regStatus === 'idle' && (
+                  <div className="p-5 border-t border-slate-800 bg-slate-900/50 shrink-0 flex justify-end gap-3">
+                    <button 
+                      onClick={handleCloseRegistration}
+                      className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm font-bold"
+                    >
+                      取消
+                    </button>
+                    <button 
+                      onClick={handleSubmitRegistration}
+                      disabled={!regForm.name || !regForm.email || !regForm.session}
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg transition-colors text-sm font-bold flex items-center gap-2"
+                    >
+                      <Mail size={16} /> 送出報名
+                    </button>
                   </div>
                 )}
               </div>
@@ -1339,6 +1504,30 @@
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24 resize-none transition-all placeholder:text-slate-600" 
                           />
                         </div>
+                        <div className="pt-2 border-t border-slate-800">
+                          <div className="flex items-center justify-between mb-3">
+                            <label className="block text-sm font-bold text-slate-200">上傳提案草案 (PDF/Word) <span className="text-rose-500">*</span></label>
+                            <a href="#" className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                              <Download size={14} /> 📥 下載提案草案公版範本
+                            </a>
+                          </div>
+                          <div className="w-full bg-slate-950 border border-slate-700 border-dashed rounded-lg p-4 text-center hover:border-emerald-500 transition-all">
+                            <input 
+                              type="file" 
+                              id="draft-upload" 
+                              className="hidden" 
+                              accept=".pdf,.doc,.docx"
+                              onChange={handleFileUpload}
+                            />
+                            <label htmlFor="draft-upload" className="cursor-pointer flex flex-col items-center justify-center w-full">
+                              <Upload size={32} className="text-slate-500 mb-2" />
+                              <span className="text-sm text-slate-400 font-medium hover:text-emerald-400 transition-colors">
+                                {draftFileName ? draftFileName : "點擊此處選擇檔案上傳"}
+                              </span>
+                              {!draftFileName && <span className="text-xs text-slate-600 mt-1">支援 .pdf, .docx 格式，最大 10MB</span>}
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1354,7 +1543,8 @@
                     </button>
                     <button 
                       onClick={handleProposalSubmit}
-                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors text-sm font-bold flex items-center gap-2"
+                      disabled={!titleInput || !painPointInput || !draftFileName}
+                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg transition-colors text-sm font-bold flex items-center gap-2"
                     >
                       <Send size={16} /> 送出申請
                     </button>
