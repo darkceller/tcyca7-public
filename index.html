@@ -8,15 +8,15 @@
   <!-- 載入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 載入最穩定的 React 與 ReactDOM (unpkg) -->
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- 載入最穩定的 React 與 ReactDOM (使用 cdnjs，避免被防火牆阻擋) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   
   <!-- 載入 Babel 以解析 JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
   
-  <!-- 載入 Lucide Icons (指定確保會釋出全域變數的 0.292.0 穩定版) -->
-  <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide-react.min.js"></script>
+  <!-- 載入 Google Material Symbols (字體模式，100% 不會遇到 JS 阻擋問題) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0" />
 
   <style>
     /* 隱藏卷軸但保留滑動功能 */
@@ -41,7 +41,7 @@
     .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
   </style>
 
-  <!-- 全域錯誤捕捉器：如果發生白畫面，會立刻印出錯誤原因 -->
+  <!-- 全域錯誤捕捉器 -->
   <script>
     window.addEventListener('error', function(event) {
       const root = document.getElementById('root');
@@ -53,7 +53,6 @@
 </head>
 <body class="bg-slate-950 text-slate-200">
   
-  <!-- React 應用程式的掛載點 -->
   <div id="root">
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; background:#020617; color:#10b981; font-family:sans-serif;">
       <div style="width:40px; height:40px; border:4px solid #10b981; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
@@ -63,35 +62,68 @@
     </div>
   </div>
 
-  <!-- React 元件與邏輯 -->
   <script type="text/babel">
     const { useState } = React;
     
-    // 確保 LucideReact 有被正確載入，否則給予空物件避免解構失敗
-    const lucide = window.lucideReact || {};
-    const { 
-      Leaf, Users, FileText, CheckCircle2, 
-      MessageSquare, AlertTriangle, Lightbulb,
-      Github, ExternalLink, Calendar, MapPin,
-      MessageCircle, PlayCircle, Activity, Map: MapIcon, 
-      Home, Smartphone, Heart, User, ThumbsUp, PenTool,
-      TrendingUp, Target, Star, Circle, X, 
-      Search, Filter, CheckCircle, AlertCircle, XCircle, Clock,
-      BookOpen, Globe, Timer, Archive, Rocket, Send, Cpu, Database
-    } = lucide;
+    // --- 替換方案：建立 Google Material Symbols 圖示對應元件 ---
+    // 徹底解決 LucideReact JS 模組被防火牆阻擋的問題
+    const Icon = ({ name, size = 24, className = "", filled = false }) => (
+      <span 
+        className={`material-symbols-rounded shrink-0 ${className}`} 
+        style={{ 
+          fontSize: `${size}px`, 
+          lineHeight: 1,
+          userSelect: 'none',
+          fontVariationSettings: filled ? "'FILL' 1" : "'FILL' 0"
+        }}
+      >
+        {name}
+      </span>
+    );
 
-    // 建立一個保護元件，如果圖示庫載入失敗可以顯示提示
+    const Leaf = (p) => <Icon name="eco" {...p} />;
+    const Users = (p) => <Icon name="group" {...p} />;
+    const FileText = (p) => <Icon name="description" {...p} />;
+    const CheckCircle2 = (p) => <Icon name="check_circle" {...p} />;
+    const MessageSquare = (p) => <Icon name="chat" {...p} />;
+    const AlertTriangle = (p) => <Icon name="warning" {...p} />;
+    const Lightbulb = (p) => <Icon name="lightbulb" {...p} />;
+    const Github = (p) => <Icon name="code" {...p} />;
+    const ExternalLink = (p) => <Icon name="open_in_new" {...p} />;
+    const Calendar = (p) => <Icon name="calendar_month" {...p} />;
+    const MapPin = (p) => <Icon name="location_on" {...p} />;
+    const MessageCircle = (p) => <Icon name="forum" {...p} />;
+    const PlayCircle = (p) => <Icon name="play_circle" {...p} />;
+    const Activity = (p) => <Icon name="monitoring" {...p} />;
+    const MapIcon = (p) => <Icon name="map" {...p} />;
+    const Home = (p) => <Icon name="home" {...p} />;
+    const Smartphone = (p) => <Icon name="smartphone" {...p} />;
+    const Heart = (p) => <Icon name="favorite" {...p} />;
+    const User = (p) => <Icon name="person" {...p} />;
+    const ThumbsUp = (p) => <Icon name="thumb_up" {...p} />;
+    const PenTool = (p) => <Icon name="edit" {...p} />;
+    const TrendingUp = (p) => <Icon name="trending_up" {...p} />;
+    const Target = (p) => <Icon name="ads_click" {...p} />;
+    const Star = (p) => <Icon name="star" {...p} />;
+    const Circle = (p) => <Icon name={p.filled ? "circle" : "radio_button_unchecked"} {...p} />;
+    const X = (p) => <Icon name="close" {...p} />;
+    const Search = (p) => <Icon name="search" {...p} />;
+    const Filter = (p) => <Icon name="filter_alt" {...p} />;
+    const CheckCircle = (p) => <Icon name="check_circle" {...p} />;
+    const AlertCircle = (p) => <Icon name="error" {...p} />;
+    const XCircle = (p) => <Icon name="cancel" {...p} />;
+    const Clock = (p) => <Icon name="schedule" {...p} />;
+    const BookOpen = (p) => <Icon name="menu_book" {...p} />;
+    const Globe = (p) => <Icon name="public" {...p} />;
+    const Timer = (p) => <Icon name="timer" {...p} />;
+    const Archive = (p) => <Icon name="archive" {...p} />;
+    const Rocket = (p) => <Icon name="rocket_launch" {...p} />;
+    const Send = (p) => <Icon name="send" {...p} />;
+    const Cpu = (p) => <Icon name="memory" {...p} />;
+    const Database = (p) => <Icon name="database" {...p} />;
+    // --------------------------------------------------------
+
     function App() {
-      if (!window.lucideReact) {
-        return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-slate-200 p-6 text-center">
-            <h1 className="text-2xl font-bold text-rose-500 mb-4">圖示庫 (Lucide) 載入失敗</h1>
-            <p className="text-slate-400 mb-6">您的網路環境可能阻擋了 unpkg.com 的 CDN 資源，或載入超時。</p>
-            <button onClick={() => window.location.reload(true)} className="px-6 py-2 bg-emerald-600 rounded-lg font-bold">強制重新整理</button>
-          </div>
-        );
-      }
-
       const [activeTab, setActiveTab] = useState('home');
       const [scoringProposal, setScoringProposal] = useState(null);
       
@@ -467,7 +499,7 @@
                         <div className="md:col-span-2 space-y-6">
                           <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl relative">
                             <div className="absolute top-4 right-4 z-10 bg-emerald-500 text-slate-950 text-xs font-bold px-3 py-1.5 rounded shadow-lg shadow-emerald-500/20 flex items-center gap-1">
-                              <Star size={14} className="fill-slate-950"/> 官方重點推動
+                              <Star size={14} filled className="text-slate-950"/> 官方重點推動
                             </div>
                             {/* Header Image Area */}
                             <div className="h-64 bg-gradient-to-br from-emerald-900 to-slate-900 relative">
@@ -837,7 +869,7 @@
                                     {step.state === 'completed' && <CheckCircle2 size={16} />}
                                     {step.state === 'current' && <Clock size={16} />}
                                     {step.state === 'error' && <X size={16} />}
-                                    {step.state === 'upcoming' && <Circle size={10} className="fill-current" />}
+                                    {step.state === 'upcoming' && <Circle size={10} filled className="text-current" />}
                                   </div>
                                   <div className="flex-grow md:flex-grow-0">
                                     <p className={`text-sm font-bold ${step.state === 'upcoming' ? 'text-slate-500' : 'text-slate-200'}`}>
@@ -1059,7 +1091,7 @@
                                   onClick={() => setImpactScoreInput(star)}
                                   className={`p-1 transition-all ${impactScoreInput >= star ? 'text-amber-400 scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : 'text-slate-600 hover:text-amber-400/50'}`}
                                 >
-                                  <Star size={36} className={impactScoreInput >= star ? 'fill-amber-400' : ''} />
+                                  <Star size={36} filled={impactScoreInput >= star} className={impactScoreInput >= star ? 'text-amber-400' : ''} />
                                 </button>
                               ))}
                             </div>
@@ -1083,7 +1115,7 @@
                                   onClick={() => setFeasibilityScoreInput(star)}
                                   className={`p-1 transition-all ${feasibilityScoreInput >= star ? 'text-blue-400 scale-110 drop-shadow-[0_0_8px_rgba(96,165,250,0.6)]' : 'text-slate-600 hover:text-blue-400/50'}`}
                                 >
-                                  <Star size={36} className={feasibilityScoreInput >= star ? 'fill-blue-400' : ''} />
+                                  <Star size={36} filled={feasibilityScoreInput >= star} className={feasibilityScoreInput >= star ? 'text-blue-400' : ''} />
                                 </button>
                               ))}
                             </div>
