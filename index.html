@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>桃園市公民開源公參平台</title>
+  <title>桃園青諮｜開源公參沙盒</title>
   
   <!-- 載入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -34,11 +34,13 @@
     @keyframes slideInBottom { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
     
     .animate-in.fade-in { animation: fadeIn 0.5s ease-out forwards; }
     .animate-in.slide-in-from-bottom-4 { animation: slideInBottom 0.4s ease-out forwards; }
     .animate-in.zoom-in-95 { animation: zoomIn 0.3s ease-out forwards; }
     .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .animate-spin { animation: spin 1s linear infinite; }
   </style>
 
   <!-- 全域錯誤捕捉器 -->
@@ -56,7 +58,6 @@
   <div id="root">
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; background:#020617; color:#10b981; font-family:sans-serif;">
       <div style="width:40px; height:40px; border:4px solid #10b981; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
-      <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
       <h2 style="font-size:1.25rem; font-weight:bold; margin-bottom:0.5rem; color:#f8fafc;">正在啟動開源公參沙盒</h2>
       <p style="color:#94a3b8; font-size:0.875rem;" class="animate-pulse-slow">首次載入需時 1-3 秒解析程式碼，請稍候...</p>
     </div>
@@ -65,8 +66,7 @@
   <script type="text/babel">
     const { useState } = React;
     
-    // --- 替換方案：建立 Google Material Symbols 圖示對應元件 ---
-    // 徹底解決 LucideReact JS 模組被防火牆阻擋的問題
+    // --- Google Material Symbols 圖示對應元件 ---
     const Icon = ({ name, size = 24, className = "", filled = false }) => (
       <span 
         className={`material-symbols-rounded shrink-0 ${className}`} 
@@ -121,7 +121,8 @@
     const Send = (p) => <Icon name="send" {...p} />;
     const Cpu = (p) => <Icon name="memory" {...p} />;
     const Database = (p) => <Icon name="database" {...p} />;
-    // --------------------------------------------------------
+    const Video = (p) => <Icon name="videocam" {...p} />;
+    const Loader = (p) => <Icon name="sync" className="animate-spin" {...p} />;
 
     function App() {
       const [activeTab, setActiveTab] = useState('home');
@@ -134,10 +135,16 @@
       const [commentInput, setCommentInput] = useState('');
       const [showSuccessMsg, setShowSuccessMsg] = useState(false);
 
-      // 我要提案的 State (含 AI 模擬)
+      // 儲存市民自行發起的審核中提案
+      const [userSubmittedProposals, setUserSubmittedProposals] = useState([]);
+
+      // 我要提案的表單 State
       const [showSubmitModal, setShowSubmitModal] = useState(false);
-      const [submitFormStatus, setSubmitFormStatus] = useState('idle'); // idle, success
+      const [submitFormStatus, setSubmitFormStatus] = useState('idle'); // idle, loading, success
+      const [titleInput, setTitleInput] = useState('');
+      const [sdgInput, setSdgInput] = useState('');
       const [painPointInput, setPainPointInput] = useState('');
+      const [solutionInput, setSolutionInput] = useState('');
       const [showAiSuggest, setShowAiSuggest] = useState(false);
 
       // 追蹤頁面的 State
@@ -149,8 +156,8 @@
         {
           id: 'poc1',
           title: '桃園市都市綠地 × 食物森林示範計畫',
-          pmPublic: '林奕衡',
-          pmSmart: '蓋天晴',
+          proposer: '林奕衡',
+          role: '副組長',
           sdg: 'SDG 11 永續城鄉',
           location: '優先測試區：中壢區鄰里公園',
           icon: Leaf,
@@ -172,8 +179,8 @@
         {
           id: 'poc2',
           title: '桃園青諮｜開源公參沙盒',
-          pmPublic: '林奕衡',
-          pmSmart: '沈育愷',
+          proposer: '林奕衡',
+          role: '副組長',
           sdg: 'SDG 16 和平正義與健全制度',
           location: '優先測試區：數位平台 (全桃園市)',
           icon: Github,
@@ -199,8 +206,8 @@
         {
           id: 1,
           title: 'AI 智慧醫療願景競賽',
-          pmPublic: '鍾靖亭',
-          pmSmart: '沈育愷',
+          proposer: '鍾靖亭',
+          role: '秘書長',
           sdg: 'SDG 3 良好健康與福祉',
           content: '邀請企業/醫療機構出題，由青年提出智慧醫療解方(長照、掛號等)。',
           feedback: '需從「技術競賽」轉向「願景競賽」，題目要更聚焦並提高實際落地性。',
@@ -216,8 +223,8 @@
         {
           id: 2,
           title: '桃園大公園計畫',
-          pmPublic: '蓋天晴',
-          pmSmart: '林繼誠',
+          proposer: '蓋天晴',
+          role: '委員',
           sdg: 'SDG 11 永續城鄉',
           content: '在中壢、龍岡打造 150 公頃大型複合式公園(生態園區、動物園等)。',
           feedback: '規模太大、跨局處多、短期可行性偏低，建議縮小範圍、分階段推進。',
@@ -233,8 +240,8 @@
         {
           id: 3,
           title: '新屋收容所活化與認養提升',
-          pmPublic: '沈育愷',
-          pmSmart: '鍾靖亭',
+          proposer: '沈育愷',
+          role: '委員',
           sdg: 'SDG 15 陸地生態',
           content: '透過場域美化、導覽、親子教育，提升收容所能見度與認養意願。',
           feedback: '需釐清改善是否能提升認養動機，並建議思考與學校、農場等周邊資源連結。',
@@ -250,8 +257,8 @@
         {
           id: 4,
           title: '公車APP 優化',
-          pmPublic: '沈虹',
-          pmSmart: '李哲宇',
+          proposer: '沈虹',
+          role: '委員',
           sdg: 'SDG 11 永續城鄉',
           content: '改善現有公車APP 資訊不清楚、市區與跨縣市資訊混雜、拖班資訊不即時等問題。',
           feedback: '進一步訪談交通局、公車業者與使用者，釐清資訊整合困難與真正痛點。',
@@ -267,8 +274,8 @@
         {
           id: 5,
           title: '心理/身心健康校園巴士',
-          pmPublic: '鍾靖亭',
-          pmSmart: '沈虹',
+          proposer: '鍾靖亭',
+          role: '秘書長',
           sdg: 'SDG 3 良好健康與福祉',
           content: '參考張老師基金會校巴模式，提供心理諮商與輔導資源。',
           feedback: '細節較少，需補強試點方案、服務對象與執行機制。',
@@ -283,13 +290,15 @@
         }
       ];
 
+      // 將使用者自行發起的提案與官方的研議中提案合併顯示
+      const allOtherProposals = [...userSubmittedProposals, ...otherProposals];
+
       // 模擬的後續追蹤數據
       const trackedProposals = [
         {
           id: 't1',
           title: '桃園市都市綠地 × 食物森林示範計畫',
-          pmPublic: '林奕衡',
-          pmSmart: '蓋天晴',
+          proposer: '林奕衡 (副組長)',
           status: '部分參採',
           statusColor: 'text-amber-400',
           statusBg: 'bg-amber-400/10 border-amber-400/30',
@@ -305,8 +314,7 @@
         {
           id: 't2',
           title: '心理/身心健康校園巴士',
-          pmPublic: '鍾靖亭',
-          pmSmart: '沈虹',
+          proposer: '鍾靖亭 (秘書長)',
           status: '全面參採',
           statusColor: 'text-emerald-400',
           statusBg: 'bg-emerald-500/10 border-emerald-500/30',
@@ -322,8 +330,7 @@
         {
           id: 't3',
           title: '桃園大公園計畫 (150公頃)',
-          pmPublic: '蓋天晴',
-          pmSmart: '林繼誠',
+          proposer: '蓋天晴 (委員)',
           status: '礙難參採',
           statusColor: 'text-rose-400',
           statusBg: 'bg-rose-500/10 border-rose-500/30',
@@ -340,8 +347,7 @@
 
       const filteredTrackedProposals = trackedProposals.filter(prop => {
         const matchesSearch = prop.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              prop.pmPublic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              prop.pmSmart.toLowerCase().includes(searchQuery.toLowerCase());
+                              prop.proposer.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = filterStatus === '全部' || prop.status === filterStatus;
         return matchesSearch && matchesStatus;
       });
@@ -368,6 +374,43 @@
         } else {
           setShowAiSuggest(false);
         }
+      };
+
+      // 處理我要提案送出
+      const handleProposalSubmit = () => {
+        if (!titleInput || !painPointInput) return; // 簡單阻擋空值
+        
+        setSubmitFormStatus('loading'); // 顯示模擬串接 Google Sheet 的載入動畫
+        
+        setTimeout(() => {
+          const newProposal = {
+            id: `user-${Date.now()}`,
+            title: titleInput,
+            proposer: '市民',
+            role: '提案人',
+            sdg: sdgInput || 'SDG 11 永續城鄉',
+            content: `痛點：${painPointInput} / 解方：${solutionInput}`,
+            feedback: '已送交青諮委進行初步盤點審核，將陸續安排與相關局處對接討論。',
+            icon: Lightbulb,
+            color: 'text-slate-400',
+            bg: 'bg-slate-500/10',
+            borderColor: 'border-slate-500/30',
+            impactScore: '-',
+            feasibilityScore: '-',
+            createdAt: new Date().toISOString(),
+            isReviewing: true, // 加上審核中標記
+            progress: { endorsements: 0, briefingCompleted: false, draftUploaded: false }
+          };
+          
+          setUserSubmittedProposals([newProposal, ...userSubmittedProposals]);
+          setSubmitFormStatus('success');
+          
+          // 清空表單
+          setTitleInput('');
+          setSdgInput('');
+          setPainPointInput('');
+          setSolutionInput('');
+        }, 2000);
       };
 
       const handleSubmitScore = () => {
@@ -444,8 +487,7 @@
                     第七屆青諮會・提案驗證沙盒上線
                   </div>
                   <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-                    1999 數據驅動的<br className="hidden md:block" />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">數位創新漏斗</span>
+                    桃園青諮｜開源公參沙盒
                   </h1>
                   <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-6 leading-relaxed">
                     我們不蓋新系統，而是打造現有 1999 資料庫的開源外掛。沙盒負責「線上、輕量、廣泛收集與 AI 打磨」，將成熟提案送入市府官方實體大會進行「線下、重量、最終審議」，達成完美互補。
@@ -492,7 +534,7 @@
                   </div>
 
                   {pocProposals.map((poc) => {
-                    const Icon = poc.icon;
+                    const IconComp = poc.icon;
                     return (
                       <div key={poc.id} className="grid md:grid-cols-3 gap-8">
                         {/* Main Content */}
@@ -504,25 +546,20 @@
                             {/* Header Image Area */}
                             <div className="h-64 bg-gradient-to-br from-emerald-900 to-slate-900 relative">
                               <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                                <Icon size={160} />
+                                <IconComp size={160} />
                               </div>
                               <div className="absolute bottom-4 left-6 pr-6 w-full">
                                 
-                                {/* PM Badges */}
-                                <div className="flex flex-col gap-2 mb-3">
-                                  <span className="bg-slate-950/80 backdrop-blur text-slate-200 text-[11px] px-3 py-1.5 rounded w-fit flex items-center gap-1.5 border border-slate-700 shadow-sm">
-                                    🤝 公參組 PM：<span className="font-bold text-white">{poc.pmPublic}</span> <span className="text-slate-400 hidden sm:inline">(專注公民對話與機制設計)</span>
-                                  </span>
-                                  <span className="bg-slate-950/80 backdrop-blur text-slate-200 text-[11px] px-3 py-1.5 rounded w-fit flex items-center gap-1.5 border border-slate-700 shadow-sm">
-                                    💻 智慧組 PM：<span className="font-bold text-white">{poc.pmSmart}</span> <span className="text-slate-400 hidden sm:inline">(專注 1999 數據對接與科技賦能)</span>
-                                  </span>
-                                </div>
-
+                                {/* Proposer Badge */}
                                 <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <span className="bg-slate-950/80 backdrop-blur text-slate-200 text-xs px-2.5 py-1.5 rounded flex items-center gap-1 border border-slate-700 shadow-sm">
+                                    <User size={14} className="text-emerald-500"/> 提案人：<span className="font-bold">{poc.proposer}</span> ({poc.role})
+                                  </span>
                                   <span className="bg-emerald-900/60 backdrop-blur text-emerald-300 text-xs px-2 py-1 rounded flex items-center gap-1 border border-emerald-500/30 shadow-sm">
                                     <Globe size={12} /> {poc.sdg}
                                   </span>
                                 </div>
+
                                 <h3 className="text-2xl md:text-3xl font-bold text-white leading-tight">{poc.title}</h3>
                                 <p className="text-emerald-400 flex items-center gap-2 mt-2 text-sm font-medium">
                                   <MapPin size={16} /> {poc.location}
@@ -592,9 +629,12 @@
                                     閱讀草案並參與評分
                                   </button>
                                   
-                                  <button className="flex-1 min-w-[200px] px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 hover:border-slate-500 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 group">
-                                    <PlayCircle size={18} className="text-blue-400 group-hover:scale-110 transition-transform" /> 
-                                    觀看說明會回放
+                                  <button 
+                                    onClick={() => window.open('https://meet.google.com/xxx-xxxx-xxx', '_blank')}
+                                    className="flex-1 min-w-[200px] px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 group shadow-lg shadow-blue-900/30"
+                                  >
+                                    <Video size={18} className="group-hover:scale-110 transition-transform" /> 
+                                    報名線上說明會
                                   </button>
                                 </div>
                                 <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
@@ -641,7 +681,7 @@
                         <FileText className="text-emerald-500" /> 其他研議中提案
                       </h2>
                       <p className="text-slate-400 text-sm max-w-2xl">
-                        公參組同步研擬的其他提案。當提案達成<strong className="text-slate-200">「30位民眾附議、辦理一次線上說明會、上傳草案架構」</strong>三大門檻時，即可晉升為首發示範專案 (PoC) 進入實質推動。
+                        公參組同步研擬的其他提案，以及民眾發起的構想。當提案達成<strong className="text-slate-200">「30位民眾附議、辦理一次線上說明會、上傳草案架構」</strong>三大門檻時，即可晉升為首發示範專案 (PoC)。
                       </p>
                     </div>
                     <div className="text-xs px-3 py-1.5 bg-slate-800 rounded-lg text-slate-300 border border-slate-700 flex items-center gap-1 shrink-0">
@@ -650,15 +690,18 @@
                   </div>
 
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {otherProposals.map((prop) => {
-                      const Icon = prop.icon;
-                      const completedConditions = [
+                    {allOtherProposals.map((prop) => {
+                      const IconComp = prop.icon || FileText;
+                      const completedConditions = prop.progress ? [
                         prop.progress.endorsements >= 30,
                         prop.progress.briefingCompleted,
                         prop.progress.draftUploaded
-                      ].filter(Boolean).length;
+                      ].filter(Boolean).length : 0;
 
                       const { isExpired, daysLeft } = getProposalStatus(prop.createdAt);
+                      
+                      // 判斷是否為民眾剛提交且還在審核中的提案
+                      const isReviewing = prop.isReviewing;
 
                       return (
                         <div key={prop.id} className={`bg-slate-900 border ${isExpired ? 'border-slate-800 opacity-75 grayscale-[30%]' : 'border-slate-800 hover:border-slate-700 hover:shadow-lg'} transition-all duration-300 rounded-xl p-6 flex flex-col h-full group relative overflow-hidden`}>
@@ -666,11 +709,15 @@
                           
                           <div className="flex items-start justify-between mb-4 relative z-10">
                             <div className={`p-3 rounded-xl ${isExpired ? 'bg-slate-800 border-slate-700 text-slate-500' : `${prop.bg} ${prop.borderColor} border`}`}>
-                              <Icon className={isExpired ? 'text-slate-500' : prop.color} size={24} />
+                              <IconComp className={isExpired ? 'text-slate-500' : prop.color} size={24} />
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
                               <div className="flex items-center gap-1.5">
-                                {isExpired ? (
+                                {isReviewing ? (
+                                  <span className="inline-flex items-center gap-1 bg-blue-900/30 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-500/30 shadow-sm font-bold">
+                                    <Clock size={10} /> ⏳ 委員會審核中
+                                  </span>
+                                ) : isExpired ? (
                                   <span className="inline-flex items-center gap-1 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded border border-slate-700 shadow-sm font-bold">
                                     <Archive size={10} /> 已擱置 (未達標)
                                   </span>
@@ -683,17 +730,11 @@
                                   <Globe size={10} /> {prop.sdg}
                                 </span>
                               </div>
+                              <span className="inline-flex items-center gap-1.5 bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700 shadow-sm mt-0.5">
+                                <User size={12} className="text-slate-400" /> 
+                                <span className="font-medium text-slate-200">{prop.proposer}</span> ({prop.role})
+                              </span>
                             </div>
-                          </div>
-
-                          {/* PM Badges */}
-                          <div className="flex flex-col gap-1.5 mb-3">
-                            <span className="inline-flex items-center gap-1.5 bg-slate-800/80 text-slate-300 text-[11px] px-2 py-1 rounded border border-slate-700 shadow-sm w-fit">
-                              🤝 公參組 PM：<span className="font-bold text-slate-200">{prop.pmPublic}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 bg-slate-800/80 text-slate-300 text-[11px] px-2 py-1 rounded border border-slate-700 shadow-sm w-fit">
-                              💻 智慧組 PM：<span className="font-bold text-slate-200">{prop.pmSmart}</span>
-                            </span>
                           </div>
                           
                           <h3 className={`text-lg font-bold mb-2 transition-colors ${isExpired ? 'text-slate-400' : 'text-white group-hover:text-emerald-400'}`}>{prop.title}</h3>
@@ -714,47 +755,61 @@
                           <p className="text-slate-400 text-sm mb-4 flex-grow leading-relaxed">{prop.content}</p>
                           
                           {/* 晉升示範專案進度條 */}
-                          <div className="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 mb-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                                <Target size={12} className="text-emerald-500"/> 晉升示範專案進度
-                              </span>
-                              <span className={`text-xs font-bold ${isExpired ? 'text-slate-500' : 'text-emerald-500'}`}>{completedConditions}/3</span>
+                          {!isReviewing && (
+                            <div className="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 mb-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                  <Target size={12} className="text-emerald-500"/> 晉升示範專案進度
+                                </span>
+                                <span className={`text-xs font-bold ${isExpired ? 'text-slate-500' : 'text-emerald-500'}`}>{completedConditions}/3</span>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-xs">
+                                  {prop.progress.endorsements >= 30 ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
+                                  <span className={prop.progress.endorsements >= 30 ? "text-slate-300" : "text-slate-500"}>
+                                    累積 30 位民眾附議評分 ({prop.progress.endorsements}/30)
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs">
+                                  {prop.progress.briefingCompleted ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
+                                  <span className={prop.progress.briefingCompleted ? "text-slate-300" : "text-slate-500"}>
+                                    辦理線上說明會完成
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs">
+                                  {prop.progress.draftUploaded ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
+                                  <span className={prop.progress.draftUploaded ? "text-slate-300" : "text-slate-500"}>
+                                    上傳本次提案草案架構
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-xs">
-                                {prop.progress.endorsements >= 30 ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
-                                <span className={prop.progress.endorsements >= 30 ? "text-slate-300" : "text-slate-500"}>
-                                  累積 30 位民眾附議評分 ({prop.progress.endorsements}/30)
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs">
-                                {prop.progress.briefingCompleted ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
-                                <span className={prop.progress.briefingCompleted ? "text-slate-300" : "text-slate-500"}>
-                                  辦理線上說明會完成
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs">
-                                {prop.progress.draftUploaded ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
-                                <span className={prop.progress.draftUploaded ? "text-slate-300" : "text-slate-500"}>
-                                  上傳本次提案草案架構
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+                          )}
 
-                          {/* Action Button: 打開評分 Modal 或顯示過期擱置 */}
-                          {isExpired ? (
-                            <button disabled className="w-full py-2.5 bg-slate-900 text-slate-500 border border-slate-800 text-sm font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2 transition-all">
+                          {/* Action Buttons */}
+                          {isReviewing ? (
+                            <div className="mt-auto bg-blue-900/20 p-3 rounded-lg border border-blue-500/30 text-center">
+                              <p className="text-xs text-blue-400">{prop.feedback}</p>
+                            </div>
+                          ) : isExpired ? (
+                            <button disabled className="mt-auto w-full py-2.5 bg-slate-900 text-slate-500 border border-slate-800 text-sm font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2 transition-all">
                               <Archive size={16} /> 提案已過期擱置
                             </button>
                           ) : (
-                            <button 
-                              onClick={() => handleOpenScoring(prop)}
-                              className="w-full py-2.5 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white border border-slate-700 hover:border-emerald-500 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2"
-                            >
-                              <PenTool size={16} /> 閱讀草案並參與評分
-                            </button>
+                            <div className="mt-auto flex flex-col sm:flex-row gap-2">
+                              <button 
+                                onClick={() => handleOpenScoring(prop)}
+                                className="flex-1 py-2.5 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white border border-slate-700 hover:border-emerald-500 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
+                              >
+                                <PenTool size={14} /> 閱讀草案與評分
+                              </button>
+                              <button 
+                                onClick={() => window.open('https://meet.google.com/xxx-xxxx-xxx', '_blank')}
+                                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
+                              >
+                                <Video size={14} /> 報名說明會
+                              </button>
+                            </div>
                           )}
                         </div>
                       );
@@ -786,7 +841,7 @@
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <input 
                       type="text"
-                      placeholder="搜尋提案名稱或雙組輔導 PM..."
+                      placeholder="搜尋提案名稱或提案人..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
@@ -831,10 +886,7 @@
                                     <StatusIcon size={14} /> {prop.status}
                                   </span>
                                   <span className="text-slate-400 text-[11px] flex items-center gap-1 border border-slate-700 bg-slate-800 px-2 py-1 rounded shadow-sm">
-                                    🤝 公參組 PM：<span className="text-slate-200 font-bold">{prop.pmPublic}</span>
-                                  </span>
-                                  <span className="text-slate-400 text-[11px] flex items-center gap-1 border border-slate-700 bg-slate-800 px-2 py-1 rounded shadow-sm">
-                                    💻 智慧組 PM：<span className="text-slate-200 font-bold">{prop.pmSmart}</span>
+                                    <User size={14} className="text-emerald-500"/> 提案人：<span className="text-slate-200 font-bold">{prop.proposer}</span>
                                   </span>
                                 </div>
                                 <h3 className="text-2xl font-bold text-white mb-4">{prop.title}</h3>
@@ -1001,7 +1053,10 @@
                   <button 
                     onClick={() => {
                       setSubmitFormStatus('idle');
+                      setTitleInput('');
+                      setSdgInput('');
                       setPainPointInput('');
+                      setSolutionInput('');
                       setShowAiSuggest(false);
                       setShowSubmitModal(true);
                     }}
@@ -1017,7 +1072,7 @@
           {/* === Modal: 評分與附議互動視窗 === */}
           {scoringProposal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
                 
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900/50 shrink-0">
@@ -1050,7 +1105,7 @@
                           <Globe size={10} /> {scoringProposal.sdg}
                         </span>
                         <p className="text-xs text-slate-500 mb-1 mt-2">您正在評估的提案</p>
-                        <h4 className="text-emerald-400 font-bold text-lg">{scoringProposal.title}</h4>
+                        <h4 className="text-emerald-400 font-bold text-xl">{scoringProposal.title}</h4>
                       </div>
 
                       {!hasReadDraft ? (
@@ -1069,9 +1124,28 @@
                         </div>
                       ) : (
                         <div className="space-y-6 animate-in slide-in-from-bottom-4">
-                          <div className="flex items-center gap-2 text-emerald-400 text-sm font-bold bg-emerald-900/20 p-3 rounded-lg border border-emerald-500/30">
-                            <CheckCircle2 size={18} /> 您已閱讀提案草案，請給予客觀的評分與建議。
+                          
+                          {/* --- 完整展開的草案與 AI 摘要區塊 --- */}
+                          <div className="bg-slate-900 border border-slate-700 rounded-xl p-5 mb-6 shadow-inner">
+                            <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-lg flex gap-3 mb-5">
+                              <Cpu size={24} className="text-blue-400 shrink-0 mt-0.5" />
+                              <div>
+                                <h5 className="text-blue-400 font-bold mb-1 text-sm">💡 AI 草案重點摘要</h5>
+                                <p className="text-xs text-blue-200 leading-relaxed">
+                                  本案核心目標為解決「{scoringProposal.title}」之問題。提案運用了跨局處協作機制，預期將有效降低維護成本並提升民眾參與感。主要挑戰在於法規限制與初期營運資源整合。
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <h4 className="text-lg font-bold text-white mb-3">📄 完整提案草案</h4>
+                            <div className="text-sm text-slate-300 space-y-4 leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-3">
+                              <p><strong className="text-emerald-400">一、 計畫緣起與痛點分析：</strong><br/>{scoringProposal.content || scoringProposal.solution}</p>
+                              <p><strong className="text-emerald-400">二、 具體執行方案：</strong><br/>我們將針對選定區域進行實體與機制上的雙軌改造，前期邀請利害關係人召開說明會，中期導入青農技術與志工培訓，建立永續運作之生態系。</p>
+                              <p><strong className="text-emerald-400">三、 預期效益：</strong><br/>短期建立示範點，驗證可行性；長期推廣至全市各區，建立一套可複製的公民協作SOP，並預期節省 30% 以上之市府既有維護預算。</p>
+                            </div>
                           </div>
+                          
+                          <hr className="border-slate-800" />
 
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
@@ -1079,7 +1153,7 @@
                                 <TrendingUp size={16} className="text-amber-400" /> 
                                 影響力 (Impact)
                               </label>
-                              <span className="text-amber-400 font-bold">{impactScoreInput} <span className="text-slate-500 text-xs font-normal">/ 5</span></span>
+                              <span className="text-amber-400 font-bold text-lg">{impactScoreInput} <span className="text-slate-500 text-xs font-normal">/ 5</span></span>
                             </div>
                             <p className="text-xs text-slate-400 bg-slate-800/50 p-2.5 rounded border border-slate-700/50 leading-relaxed">
                               <strong className="text-slate-300">定義：</strong>有多少人數及族群受益、觸及哪些利害關係人，是否具備社會共鳴與擴散潛力。
@@ -1103,7 +1177,7 @@
                                 <Target size={16} className="text-blue-400" /> 
                                 可行性 (Feasibility)
                               </label>
-                              <span className="text-blue-400 font-bold">{feasibilityScoreInput} <span className="text-slate-500 text-xs font-normal">/ 5</span></span>
+                              <span className="text-blue-400 font-bold text-lg">{feasibilityScoreInput} <span className="text-slate-500 text-xs font-normal">/ 5</span></span>
                             </div>
                             <p className="text-xs text-slate-400 bg-slate-800/50 p-2.5 rounded border border-slate-700/50 leading-relaxed">
                               <strong className="text-slate-300">定義：</strong>以最小預算與數量，以及提案者及現有資源可以落實達成的程度。
@@ -1121,7 +1195,7 @@
                             </div>
                           </div>
 
-                          <div className="space-y-2 pt-2 border-t border-slate-800">
+                          <div className="space-y-2 pt-4 border-t border-slate-800">
                             <label className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
                               <MessageSquare size={16} className="text-emerald-400" /> 
                               提案意見 (選填)
@@ -1186,14 +1260,24 @@
                         我們已經收到您的提案構想。經過青年諮詢委員會檢視格式無誤後，即可正式在「提案大廳」刊登，開始您的 30 天連署挑戰。
                       </p>
                       <button 
-                        onClick={() => setShowSubmitModal(false)}
+                        onClick={() => {
+                          setShowSubmitModal(false);
+                          setActiveTab('home');
+                          setTimeout(() => document.getElementById('other-proposals').scrollIntoView({ behavior: 'smooth' }), 300);
+                        }}
                         className="mt-8 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors border border-slate-700 font-bold text-sm"
                       >
-                        返回平台
+                        返回提案大廳查看
                       </button>
                     </div>
+                  ) : submitFormStatus === 'loading' ? (
+                    <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in">
+                      <Loader size={48} className="text-emerald-500 mb-6" />
+                      <h4 className="text-xl font-bold text-white mb-2">處理中...</h4>
+                      <p className="text-slate-400 text-sm">正在串接 Google Sheet 同步您的提案資料</p>
+                    </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-6 animate-in fade-in">
                       <div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl flex items-start gap-3">
                         <Lightbulb size={20} className="text-emerald-400 shrink-0 mt-0.5" />
                         <div className="text-sm text-slate-300 leading-relaxed">
@@ -1204,18 +1288,28 @@
                       <div className="space-y-5">
                         <div>
                           <label className="block text-sm font-bold text-slate-200 mb-2">提案名稱 <span className="text-rose-500">*</span></label>
-                          <input type="text" placeholder="例如：桃園市公有閒置空間活化計畫" className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-600" />
+                          <input 
+                            type="text" 
+                            value={titleInput}
+                            onChange={(e) => setTitleInput(e.target.value)}
+                            placeholder="例如：桃園市公有閒置空間活化計畫" 
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-600" 
+                          />
                         </div>
                         <div>
                           <label className="block text-sm font-bold text-slate-200 mb-2">對應之 SDG 永續指標 <span className="text-rose-500">*</span></label>
-                          <select className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all appearance-none">
+                          <select 
+                            value={sdgInput}
+                            onChange={(e) => setSdgInput(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all appearance-none"
+                          >
                             <option value="">請選擇最符合的主標籤</option>
-                            <option>SDG 3 良好健康與福祉</option>
-                            <option>SDG 4 優質教育</option>
-                            <option>SDG 11 永續城鄉</option>
-                            <option>SDG 13 氣候行動</option>
-                            <option>SDG 15 陸地生態</option>
-                            <option>SDG 16 和平正義與健全制度</option>
+                            <option value="SDG 3 良好健康與福祉">SDG 3 良好健康與福祉</option>
+                            <option value="SDG 4 優質教育">SDG 4 優質教育</option>
+                            <option value="SDG 11 永續城鄉">SDG 11 永續城鄉</option>
+                            <option value="SDG 13 氣候行動">SDG 13 氣候行動</option>
+                            <option value="SDG 15 陸地生態">SDG 15 陸地生態</option>
+                            <option value="SDG 16 和平正義與健全制度">SDG 16 和平正義與健全制度</option>
                           </select>
                         </div>
                         <div>
@@ -1238,14 +1332,19 @@
                         </div>
                         <div>
                           <label className="block text-sm font-bold text-slate-200 mb-2">初步解方與想像 <span className="text-rose-500">*</span></label>
-                          <textarea placeholder="請說明您建議的解決方案，以及可能需要協調的市府局處或民間單位..." className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24 resize-none transition-all placeholder:text-slate-600" />
+                          <textarea 
+                            value={solutionInput}
+                            onChange={(e) => setSolutionInput(e.target.value)}
+                            placeholder="請說明您建議的解決方案，以及可能需要協調的市府局處或民間單位..." 
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24 resize-none transition-all placeholder:text-slate-600" 
+                          />
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {submitFormStatus !== 'success' && (
+                {submitFormStatus === 'idle' && (
                   <div className="p-5 border-t border-slate-800 bg-slate-900/50 shrink-0 flex justify-end gap-3">
                     <button 
                       onClick={() => setShowSubmitModal(false)}
@@ -1254,7 +1353,7 @@
                       取消
                     </button>
                     <button 
-                      onClick={() => setSubmitFormStatus('success')}
+                      onClick={handleProposalSubmit}
                       className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors text-sm font-bold flex items-center gap-2"
                     >
                       <Send size={16} /> 送出申請
@@ -1271,7 +1370,7 @@
               <div className="text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
                   <Leaf className="h-5 w-5 text-emerald-500" />
-                  <span className="font-bold text-slate-300 tracking-wide">桃園市公民開源公參平台</span>
+                  <span className="font-bold text-slate-300 tracking-wide">桃園青諮｜開源公參沙盒</span>
                 </div>
                 <p className="text-xs text-slate-500 max-w-md leading-relaxed mb-4">
                   本平台為桃園市政府第七屆青年諮詢委員會公共參與組之公民科技沙盒實驗計畫。我們致力於將提案歷程開源，推動具實質行動力的公眾參與。
