@@ -80,7 +80,7 @@
   </div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useMemo } = React;
     
     // --- Google Material Symbols 圖示對應元件 ---
     const Icon = ({ name, size = 24, className = "", filled = false }) => (
@@ -142,8 +142,23 @@
     const Upload = (p) => <Icon name="upload" {...p} />;
     const Download = (p) => <Icon name="download" {...p} />;
     const Mail = (p) => <Icon name="mail" {...p} />;
-    const Event = (p) => <Icon name="event" {...p} />;
     const PieChartIcon = (p) => <Icon name="pie_chart" {...p} />;
+    const SupportAgent = (p) => <Icon name="support_agent" {...p} />; // 客服懸浮按鈕使用
+
+    // --- 完整 SDG 17 項清單 ---
+    const SDG_LIST = [
+      "SDG 1 消除貧窮", "SDG 2 消除飢餓", "SDG 3 良好健康與福祉", "SDG 4 優質教育",
+      "SDG 5 性別平權", "SDG 6 淨水及衛生", "SDG 7 可負擔的潔淨能源", "SDG 8 尊嚴就業與經濟發展",
+      "SDG 9 產業、創新及基礎建設", "SDG 10 減少不平等", "SDG 11 永續城鄉", "SDG 12 責任消費及生產",
+      "SDG 13 氣候行動", "SDG 14 保育海洋生態", "SDG 15 保育陸域生態", "SDG 16 和平正義與健全制度",
+      "SDG 17 多元夥伴關係"
+    ];
+
+    // SDG 對應色票 (產生圓餅圖與視覺使用)
+    const SDG_COLORS = [
+      '#e5243b', '#dda63a', '#4c9f38', '#c5192d', '#ff3a21', '#26bde2', '#fcc30b', '#a21942',
+      '#fd6925', '#dd1367', '#fd9d24', '#bf8b2e', '#3f7e44', '#0a97d9', '#56c02b', '#00689d', '#19486a'
+    ];
 
     function App() {
       const [activeTab, setActiveTab] = useState('home');
@@ -160,6 +175,11 @@
       const [registrationProposal, setRegistrationProposal] = useState(null);
       const [regForm, setRegForm] = useState({ name: '', email: '', session: '' });
       const [regStatus, setRegStatus] = useState('idle'); // idle, loading, success
+
+      // 平台客服/問題回報 (FAB) 的 State
+      const [showChat, setShowChat] = useState(false);
+      const [chatMessage, setChatMessage] = useState('');
+      const [chatStatus, setChatStatus] = useState('idle'); // idle, loading, success
 
       // 儲存市民自行發起的審核中提案
       const [userSubmittedProposals, setUserSubmittedProposals] = useState([
@@ -191,7 +211,7 @@
       const [painPointInput, setPainPointInput] = useState('');
       const [solutionInput, setSolutionInput] = useState('');
       const [showAiSuggest, setShowAiSuggest] = useState(false);
-      const [draftFileName, setDraftFileName] = useState(''); // 模擬檔案上傳
+      const [draftFileName, setDraftFileName] = useState('');
 
       // 追蹤頁面的 State
       const [searchQuery, setSearchQuery] = useState('');
@@ -274,7 +294,7 @@
           borderColor: 'border-emerald-500/30',
           impactScore: 4.6,
           feasibilityScore: 2.3,
-          createdAt: '2026-04-10', // 已超過 60 天 (依目前系統時間為準會自動判斷)
+          createdAt: '2026-04-10',
           progress: { endorsements: 35, briefingCompleted: true, draftUploaded: false }
         },
         {
@@ -330,13 +350,15 @@
         }
       ];
 
+      // 將使用者自行發起的提案與官方的研議中提案合併顯示
+      const allOtherProposals = [...userSubmittedProposals, ...otherProposals];
+
       // 模擬的後續追蹤數據
       const trackedProposals = [
         {
           id: 't1',
           title: '桃園市都市綠地 × 食物森林示範計畫',
-          pmPublic: '林奕衡',
-          pmSmart: '蓋天晴',
+          proposer: '林奕衡 (副組長)',
           status: '部分參採',
           statusColor: 'text-amber-400',
           statusBg: 'bg-amber-400/10 border-amber-400/30',
@@ -352,8 +374,7 @@
         {
           id: 't2',
           title: '心理/身心健康校園巴士',
-          pmPublic: '鍾靖亭',
-          pmSmart: '沈虹',
+          proposer: '鍾靖亭 (秘書長)',
           status: '全面參採',
           statusColor: 'text-emerald-400',
           statusBg: 'bg-emerald-500/10 border-emerald-500/30',
@@ -369,8 +390,7 @@
         {
           id: 't3',
           title: '桃園大公園計畫 (150公頃)',
-          pmPublic: '蓋天晴',
-          pmSmart: '林繼誠',
+          proposer: '蓋天晴 (委員)',
           status: '礙難參採',
           statusColor: 'text-rose-400',
           statusBg: 'bg-rose-500/10 border-rose-500/30',
@@ -387,8 +407,7 @@
 
       const filteredTrackedProposals = trackedProposals.filter(prop => {
         const matchesSearch = prop.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              prop.pmPublic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              prop.pmSmart.toLowerCase().includes(searchQuery.toLowerCase());
+                              prop.proposer.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = filterStatus === '全部' || prop.status === filterStatus;
         return matchesSearch && matchesStatus;
       });
@@ -498,7 +517,8 @@
         return { isExpired: false, daysLeft };
       };
 
-      // 計算儀表板數據
+      // --- 計算儀表板數據 ---
+      // 1. 提案進度分佈
       const pocCount = pocProposals.length;
       const discussionCount = otherProposals.length;
       const reviewCount = userSubmittedProposals.length;
@@ -506,15 +526,41 @@
 
       const pocPct = totalProposals === 0 ? 0 : (pocCount / totalProposals) * 100;
       const discPct = totalProposals === 0 ? 0 : (discussionCount / totalProposals) * 100;
-      
-      const pieGradient = `conic-gradient(
+      const statusPieGradient = `conic-gradient(
         #10b981 0% ${pocPct}%, 
         #3b82f6 ${pocPct}% ${pocPct + discPct}%, 
         #94a3b8 ${pocPct + discPct}% 100%
       )`;
 
+      // 2. SDG 類型分佈
+      const sdgCounts = useMemo(() => {
+        const allProposals = [...pocProposals, ...otherProposals, ...userSubmittedProposals];
+        const counts = {};
+        allProposals.forEach(p => {
+          const sdg = p.sdg || '其他';
+          counts[sdg] = (counts[sdg] || 0) + 1;
+        });
+        // 轉換為陣列並由高至低排序
+        return Object.keys(counts).map(key => ({ name: key, count: counts[key] })).sort((a,b) => b.count - a.count);
+      }, [pocProposals, otherProposals, userSubmittedProposals]);
+      
+      const sdgPieGradient = useMemo(() => {
+        if(sdgCounts.length === 0) return 'conic-gradient(#334155 0% 100%)';
+        let currentPct = 0;
+        const total = sdgCounts.reduce((acc, curr) => acc + curr.count, 0);
+        const parts = sdgCounts.map((d, i) => {
+          const pct = (d.count / total) * 100;
+          const color = SDG_COLORS[SDG_LIST.indexOf(d.name)] || SDG_COLORS[i % SDG_COLORS.length];
+          const part = `${color} ${currentPct}% ${currentPct + pct}%`;
+          currentPct += pct;
+          return part;
+        });
+        return `conic-gradient(${parts.join(', ')})`;
+      }, [sdgCounts]);
+
+
       return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-emerald-500/30 relative flex flex-col">
+        <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-emerald-500/30 relative flex flex-col overflow-x-hidden">
           {/* Navigation Bar */}
           <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -554,7 +600,7 @@
             </div>
           </nav>
 
-          <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+          <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
             
             {/* === View: Home / Proposals === */}
             {activeTab === 'home' && (
@@ -604,46 +650,71 @@
                   </div>
                 </section>
 
-                {/* Dashboard Section */}
-                <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
+                {/* Dashboard Section (雙圓餅圖佈局) */}
+                <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                   <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2 relative z-10">
-                    <PieChartIcon className="text-blue-500" /> 平台提案儀表板
+                  <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2 relative z-10">
+                    <PieChartIcon className="text-blue-500" /> 平台提案數據儀表板
                   </h2>
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 relative z-10">
-                    
-                    {/* Pie Chart */}
-                    <div className="relative w-48 h-48 rounded-full shrink-0 shadow-lg border-4 border-slate-800 flex items-center justify-center" style={{ background: pieGradient }}>
-                      <div className="absolute inset-2 bg-slate-900 rounded-full flex flex-col items-center justify-center shadow-inner">
-                        <span className="text-4xl font-extrabold text-white">{totalProposals}</span>
-                        <span className="text-xs text-slate-400 font-bold tracking-wider mt-1">總計件數</span>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+                    {/* 左側：提案進度狀態分佈 */}
+                    <div className="bg-slate-950/40 p-5 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center gap-6 shadow-inner">
+                      <div className="relative w-36 h-36 rounded-full shrink-0 shadow-lg border-4 border-slate-800 flex items-center justify-center" style={{ background: statusPieGradient }}>
+                        <div className="absolute inset-[6px] bg-slate-900 rounded-full flex flex-col items-center justify-center shadow-inner">
+                          <span className="text-3xl font-extrabold text-white">{totalProposals}</span>
+                          <span className="text-[10px] text-slate-400 font-bold tracking-wider mt-0.5">總計件數</span>
+                        </div>
+                      </div>
+
+                      <div className="flex-grow flex flex-col justify-center gap-3 w-full">
+                        <div className="bg-slate-900 p-2.5 rounded border border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div> 
+                            <span className="text-xs font-bold text-emerald-500">首發示範專案</span>
+                          </div>
+                          <span className="text-sm font-bold text-white">{pocCount} <span className="text-[10px] text-slate-500 font-normal">件</span></span>
+                        </div>
+                        <div className="bg-slate-900 p-2.5 rounded border border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div> 
+                            <span className="text-xs font-bold text-blue-500">研議中提案</span>
+                          </div>
+                          <span className="text-sm font-bold text-white">{discussionCount} <span className="text-[10px] text-slate-500 font-normal">件</span></span>
+                        </div>
+                        <div className="bg-slate-900 p-2.5 rounded border border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.8)]"></div> 
+                            <span className="text-xs font-bold text-slate-400">待審核提案</span>
+                          </div>
+                          <span className="text-sm font-bold text-white">{reviewCount} <span className="text-[10px] text-slate-500 font-normal">件</span></span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Stats Legends */}
-                    <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-                      <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 hover:border-emerald-500/50 transition-colors">
-                        <div className="text-emerald-500 text-xs font-bold mb-1.5 flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div> 
-                          首發示範專案
+                    {/* 右側：SDG 類型分佈 */}
+                    <div className="bg-slate-950/40 p-5 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center gap-6 shadow-inner">
+                      <div className="relative w-36 h-36 rounded-full shrink-0 shadow-lg border-4 border-slate-800 flex items-center justify-center" style={{ background: sdgPieGradient }}>
+                        <div className="absolute inset-[6px] bg-slate-900 rounded-full flex flex-col items-center justify-center shadow-inner">
+                          <Globe className="text-slate-400 mb-1" size={20}/>
+                          <span className="text-xs text-slate-400 font-bold tracking-wider">SDGs</span>
                         </div>
-                        <div className="text-3xl font-bold text-white">{pocCount} <span className="text-sm font-normal text-slate-500">件</span></div>
                       </div>
-                      
-                      <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 hover:border-blue-500/50 transition-colors">
-                        <div className="text-blue-500 text-xs font-bold mb-1.5 flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div> 
-                          研議中提案
-                        </div>
-                        <div className="text-3xl font-bold text-white">{discussionCount} <span className="text-sm font-normal text-slate-500">件</span></div>
-                      </div>
-                      
-                      <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 hover:border-slate-500 transition-colors">
-                        <div className="text-slate-400 text-xs font-bold mb-1.5 flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.8)]"></div> 
-                          待審核提案
-                        </div>
-                        <div className="text-3xl font-bold text-white">{reviewCount} <span className="text-sm font-normal text-slate-500">件</span></div>
+
+                      <div className="flex-grow flex flex-col gap-2 w-full max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
+                        {sdgCounts.map((d, i) => {
+                          const sdgIdx = SDG_LIST.indexOf(d.name);
+                          const color = SDG_COLORS[sdgIdx] || SDG_COLORS[i % SDG_COLORS.length];
+                          return (
+                            <div key={d.name} className="flex items-center justify-between bg-slate-900 px-3 py-2 rounded border border-slate-800">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }}></div>
+                                <span className="text-[11px] text-slate-300 truncate" title={d.name}>{d.name}</span>
+                              </div>
+                              <span className="text-sm font-bold text-white pl-2 shrink-0">{d.count} <span className="text-[10px] text-slate-500 font-normal">件</span></span>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1311,7 +1382,7 @@
                             
                             <h4 className="text-lg font-bold text-white mb-3">📄 完整提案草案</h4>
                             <div className="text-sm text-slate-300 space-y-4 leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-3 bg-slate-950/50 p-4 rounded-lg border border-slate-800">
-                              <p><strong className="text-emerald-400">一、 計畫緣起與痛點分析：</strong><br/>{scoringProposal.content || scoringProposal.solution}</p>
+                              <p><strong className="text-emerald-400">一、 計畫緣起與痛點分析：</strong><br/>{scoringProposal.content || scoringProposal.solution || '詳細資料如附件。'}</p>
                               <p><strong className="text-emerald-400">二、 具體執行方案：</strong><br/>我們將針對選定區域進行實體與機制上的雙軌改造，前期邀請利害關係人召開說明會，中期導入專業技術與志工培訓，建立永續運作之生態系。</p>
                               <p><strong className="text-emerald-400">三、 預期效益：</strong><br/>短期建立示範點，驗證可行性；長期推廣至全市各區，建立一套可複製的公民協作SOP，並預期達成實質社會影響力。</p>
                               <p><strong className="text-emerald-400">四、 附件資料：</strong><br/>
@@ -1548,7 +1619,11 @@
                         onClick={() => {
                           setShowSubmitModal(false);
                           setActiveTab('home');
-                          setTimeout(() => document.getElementById('reviewing-proposals').scrollIntoView({ behavior: 'smooth' }), 300);
+                          // 確保 DOM 渲染完畢後再捲動
+                          setTimeout(() => {
+                            const el = document.getElementById('reviewing-proposals');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
                         }}
                         className="mt-8 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors border border-slate-700 font-bold text-sm"
                       >
@@ -1589,12 +1664,9 @@
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all appearance-none"
                           >
                             <option value="">請選擇最符合的主標籤</option>
-                            <option value="SDG 3 良好健康與福祉">SDG 3 良好健康與福祉</option>
-                            <option value="SDG 4 優質教育">SDG 4 優質教育</option>
-                            <option value="SDG 11 永續城鄉">SDG 11 永續城鄉</option>
-                            <option value="SDG 13 氣候行動">SDG 13 氣候行動</option>
-                            <option value="SDG 15 陸地生態">SDG 15 陸地生態</option>
-                            <option value="SDG 16 和平正義與健全制度">SDG 16 和平正義與健全制度</option>
+                            {SDG_LIST.map(sdg => (
+                              <option key={sdg} value={sdg}>{sdg}</option>
+                            ))}
                           </select>
                         </div>
                         <div>
@@ -1603,7 +1675,7 @@
                             value={painPointInput}
                             onChange={handlePainPointChange}
                             placeholder="請描述您觀察到的問題，以及受影響的對象..." 
-                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24 resize-none transition-all placeholder:text-slate-600" 
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24 resize-none transition-all placeholder:text-slate-600 custom-scrollbar" 
                           />
                           {showAiSuggest && (
                             <div className="mt-3 bg-blue-900/20 border border-blue-500/40 p-4 rounded-lg flex items-start gap-3 animate-in slide-in-from-top-2">
@@ -1621,7 +1693,7 @@
                             value={solutionInput}
                             onChange={(e) => setSolutionInput(e.target.value)}
                             placeholder="請說明您建議的解決方案，以及可能需要協調的市府局處或民間單位..." 
-                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24 resize-none transition-all placeholder:text-slate-600" 
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24 resize-none transition-all placeholder:text-slate-600 custom-scrollbar" 
                           />
                         </div>
                         <div className="pt-2 border-t border-slate-800">
@@ -1673,6 +1745,69 @@
               </div>
             </div>
           )}
+
+          {/* === FAB: 客服與問題回報 === */}
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+            {showChat && (
+              <div className="mb-4 w-[320px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4">
+                <div className="bg-blue-600 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white">
+                    <SupportAgent size={20} />
+                    <span className="font-bold text-sm">平台客服與問題回報</span>
+                  </div>
+                  <button onClick={() => setShowChat(false)} className="text-blue-200 hover:text-white transition-colors">
+                    <X size={18} />
+                  </button>
+                </div>
+                
+                <div className="p-4 bg-slate-950/50">
+                  {chatStatus === 'success' ? (
+                    <div className="py-8 text-center animate-in zoom-in-95 duration-300">
+                      <CheckCircle2 size={36} className="text-emerald-500 mx-auto mb-3" />
+                      <h4 className="text-emerald-400 font-bold mb-1">訊息已送出</h4>
+                      <p className="text-slate-400 text-xs">感謝您的回報，系統管理員將盡快處理。</p>
+                      <button onClick={() => {setShowChat(false); setChatStatus('idle'); setChatMessage('');}} className="mt-4 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs transition-colors">
+                        關閉
+                      </button>
+                    </div>
+                  ) : chatStatus === 'loading' ? (
+                    <div className="py-10 text-center flex flex-col items-center">
+                       <Loader size={28} className="text-blue-500 mb-3" />
+                       <p className="text-slate-400 text-xs">正在傳送您的訊息...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-slate-400">如果您遇到任何系統錯誤或有操作上的建議，請告訴我們。</p>
+                      <textarea 
+                        value={chatMessage}
+                        onChange={e => setChatMessage(e.target.value)}
+                        placeholder="請輸入您的問題或建議..."
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-24 resize-none transition-all placeholder:text-slate-600 custom-scrollbar"
+                      />
+                      <button 
+                        onClick={() => {
+                          if(!chatMessage) return;
+                          setChatStatus('loading');
+                          setTimeout(() => setChatStatus('success'), 1200);
+                        }}
+                        disabled={!chatMessage}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg transition-colors text-sm font-bold flex items-center justify-center gap-2"
+                      >
+                        <Send size={14} /> 送出訊息
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <button 
+              onClick={() => setShowChat(!showChat)}
+              className={`${showChat ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/50 hover:scale-110'} w-14 h-14 rounded-full flex items-center justify-center transition-all`}
+            >
+              {showChat ? <X size={28} /> : <SupportAgent size={28} />}
+            </button>
+          </div>
 
           {/* Footer */}
           <footer className="border-t border-slate-800 bg-slate-950 py-10 mt-auto">
