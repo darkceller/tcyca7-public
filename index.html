@@ -143,6 +143,7 @@
     const Download = (p) => <Icon name="download" {...p} />;
     const Mail = (p) => <Icon name="mail" {...p} />;
     const Event = (p) => <Icon name="event" {...p} />;
+    const PieChartIcon = (p) => <Icon name="pie_chart" {...p} />;
 
     function App() {
       const [activeTab, setActiveTab] = useState('home');
@@ -161,7 +162,26 @@
       const [regStatus, setRegStatus] = useState('idle'); // idle, loading, success
 
       // 儲存市民自行發起的審核中提案
-      const [userSubmittedProposals, setUserSubmittedProposals] = useState([]);
+      const [userSubmittedProposals, setUserSubmittedProposals] = useState([
+        {
+          id: 'user-mock-1',
+          title: '桃園市公有閒置空間活化轉型青年聚落',
+          proposer: '陳小明',
+          role: '市民',
+          sdg: 'SDG 11 永續城鄉',
+          content: '痛點：許多高架橋下與公有地閒置長滿雜草，缺乏妥善管理。 / 解方：釋出空間提供青年團隊經營快閃店或藝文展演，活化死角。',
+          feedback: '已送交青諮委進行初步盤點審核，將陸續安排與相關局處對接討論。',
+          icon: Lightbulb,
+          color: 'text-slate-400',
+          bg: 'bg-slate-500/10',
+          borderColor: 'border-slate-500/30',
+          impactScore: '-',
+          feasibilityScore: '-',
+          createdAt: '2026-06-08',
+          isReviewing: true,
+          progress: { endorsements: 0, briefingCompleted: false, draftUploaded: true }
+        }
+      ]);
 
       // 我要提案的表單 State
       const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -180,33 +200,10 @@
       // 首發示範專案 (PoC) 陣列
       const pocProposals = [
         {
-          id: 'poc1',
-          title: '桃園市都市綠地 × 食物森林示範計畫',
-          proposer: '林奕衡',
-          role: '副組長',
-          sdg: 'SDG 11 永續城鄉',
-          location: '優先測試區：中壢區鄰里公園',
-          icon: Leaf,
-          painpoints: [
-            { icon: AlertTriangle, color: 'text-amber-400', title: '維護預算無底洞', desc: '傳統草坪需頻繁割草澆水，消耗公所龐大預算，且易因樹穴隆起破壞人行鋪面，造成重複修繕浪費。' },
-            { icon: MessageSquare, color: 'text-blue-400', title: '缺乏實質參與感', desc: '民眾只能單向觀賞，草長了、有蟲了就打 1999 客訴，缺乏對公共綠地的認同感與在地連結。' }
-          ],
-          solution: '導入「共生農業 (Syntropic Farming)」技術，將傳統單一綠地轉型為具備自我演替能力的多層次「食物森林」。不僅能降溫保水、節省政府維護成本，更透過三階段公參機制（諮詢 ➡️ 協作 ➡️ 自治），把民眾的客訴轉化為地方的認同與行動力。',
-          tags: ['🏢 工務局：法規解套', '🌱 農業局：青農技術', '🤝 青年局：企業媒合'],
-          impactScore: 4.8, 
-          feasibilityScore: 4.5, 
-          endorsements: 128,
-          timeline: [
-            { title: '晉升示範專案', date: '2026.06.15', desc: '達成 30 人附議門檻、完成線上說明會並上傳草案。後續將導入開源工具應用（如採用 Polis 數位共識模組概念）進行意見收斂。', state: 'completed' },
-            { title: '初稿與法規衝撞', date: '2026.05', desc: '草案初步成型，但面臨《公園管理自治條例》對作物種植的限制，開始研擬跨局處解套方案。', state: 'completed' },
-            { title: '田調與痛點發現', date: '2026.04', desc: '走訪中壢綠地，發現真實痛點並非民眾無意願，而是缺乏「專業引導團隊」與「長期營運資金」。', state: 'completed' }
-          ]
-        },
-        {
           id: 'poc2',
           title: '桃園青諮｜開源公參沙盒',
-          proposer: '林奕衡',
-          role: '副組長',
+          pmPublic: '林奕衡',
+          pmSmart: '沈育愷',
           sdg: 'SDG 16 和平正義與健全制度',
           location: '優先測試區：數位平台 (全桃園市)',
           icon: Github,
@@ -227,13 +224,30 @@
         }
       ];
 
-      // 整理自 6/8 導師會議紀錄的其他 5 個提案
+      // 其他研議中提案陣列 (包含原食物森林)
       const otherProposals = [
+        {
+          id: 'food_forest',
+          title: '桃園市都市綠地 × 食物森林示範計畫',
+          pmPublic: '林奕衡',
+          pmSmart: '蓋天晴',
+          sdg: 'SDG 11 永續城鄉',
+          content: '導入「共生農業」技術，將傳統單一綠地轉型為具備自我演替能力的多層次「食物森林」。不僅能降溫保水、節省維護成本，更把民眾客訴轉化為地方認同與行動力。',
+          feedback: '目前已進入跨局處研議階段，待完成線上說明會及達成連署門檻即可晉升為示範專案。',
+          icon: Leaf,
+          color: 'text-emerald-400',
+          bg: 'bg-emerald-500/10',
+          borderColor: 'border-emerald-500/30',
+          impactScore: 4.8,
+          feasibilityScore: 4.5,
+          createdAt: '2026-05-10',
+          progress: { endorsements: 25, briefingCompleted: false, draftUploaded: true }
+        },
         {
           id: 1,
           title: 'AI 智慧醫療願景競賽',
-          proposer: '鍾靖亭',
-          role: '秘書長',
+          pmPublic: '鍾靖亭',
+          pmSmart: '沈育愷',
           sdg: 'SDG 3 良好健康與福祉',
           content: '邀請企業/醫療機構出題，由青年提出智慧醫療解方(長照、掛號等)。',
           feedback: '需從「技術競賽」轉向「願景競賽」，題目要更聚焦並提高實際落地性。',
@@ -249,8 +263,8 @@
         {
           id: 2,
           title: '桃園大公園計畫',
-          proposer: '蓋天晴',
-          role: '委員',
+          pmPublic: '蓋天晴',
+          pmSmart: '林繼誠',
           sdg: 'SDG 11 永續城鄉',
           content: '在中壢、龍岡打造 150 公頃大型複合式公園(生態園區、動物園等)。',
           feedback: '規模太大、跨局處多、短期可行性偏低，建議縮小範圍、分階段推進。',
@@ -260,14 +274,14 @@
           borderColor: 'border-emerald-500/30',
           impactScore: 4.6,
           feasibilityScore: 2.3,
-          createdAt: '2026-04-10', // 已超過30天，將觸發擱置
+          createdAt: '2026-04-10', // 已超過 60 天 (依目前系統時間為準會自動判斷)
           progress: { endorsements: 35, briefingCompleted: true, draftUploaded: false }
         },
         {
           id: 3,
           title: '新屋收容所活化與認養提升',
-          proposer: '沈育愷',
-          role: '委員',
+          pmPublic: '沈育愷',
+          pmSmart: '鍾靖亭',
           sdg: 'SDG 15 陸地生態',
           content: '透過場域美化、導覽、親子教育，提升收容所能見度與認養意願。',
           feedback: '需釐清改善是否能提升認養動機，並建議思考與學校、農場等周邊資源連結。',
@@ -277,14 +291,14 @@
           borderColor: 'border-amber-500/30',
           impactScore: 4.0,
           feasibilityScore: 4.2,
-          createdAt: '2026-04-20', // 已超過30天，將觸發擱置
+          createdAt: '2026-04-20',
           progress: { endorsements: 8, briefingCompleted: false, draftUploaded: false }
         },
         {
           id: 4,
           title: '公車APP 優化',
-          proposer: '沈虹',
-          role: '委員',
+          pmPublic: '沈虹',
+          pmSmart: '李哲宇',
           sdg: 'SDG 11 永續城鄉',
           content: '改善現有公車APP 資訊不清楚、市區與跨縣市資訊混雜、拖班資訊不即時等問題。',
           feedback: '進一步訪談交通局、公車業者與使用者，釐清資訊整合困難與真正痛點。',
@@ -300,8 +314,8 @@
         {
           id: 5,
           title: '心理/身心健康校園巴士',
-          proposer: '鍾靖亭',
-          role: '秘書長',
+          pmPublic: '鍾靖亭',
+          pmSmart: '沈虹',
           sdg: 'SDG 3 良好健康與福祉',
           content: '參考張老師基金會校巴模式，提供心理諮商與輔導資源。',
           feedback: '細節較少，需補強試點方案、服務對象與執行機制。',
@@ -316,15 +330,13 @@
         }
       ];
 
-      // 將使用者自行發起的提案與官方的研議中提案合併顯示
-      const allOtherProposals = [...userSubmittedProposals, ...otherProposals];
-
       // 模擬的後續追蹤數據
       const trackedProposals = [
         {
           id: 't1',
           title: '桃園市都市綠地 × 食物森林示範計畫',
-          proposer: '林奕衡 (副組長)',
+          pmPublic: '林奕衡',
+          pmSmart: '蓋天晴',
           status: '部分參採',
           statusColor: 'text-amber-400',
           statusBg: 'bg-amber-400/10 border-amber-400/30',
@@ -340,7 +352,8 @@
         {
           id: 't2',
           title: '心理/身心健康校園巴士',
-          proposer: '鍾靖亭 (秘書長)',
+          pmPublic: '鍾靖亭',
+          pmSmart: '沈虹',
           status: '全面參採',
           statusColor: 'text-emerald-400',
           statusBg: 'bg-emerald-500/10 border-emerald-500/30',
@@ -356,7 +369,8 @@
         {
           id: 't3',
           title: '桃園大公園計畫 (150公頃)',
-          proposer: '蓋天晴 (委員)',
+          pmPublic: '蓋天晴',
+          pmSmart: '林繼誠',
           status: '礙難參採',
           statusColor: 'text-rose-400',
           statusBg: 'bg-rose-500/10 border-rose-500/30',
@@ -373,14 +387,15 @@
 
       const filteredTrackedProposals = trackedProposals.filter(prop => {
         const matchesSearch = prop.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              prop.proposer.toLowerCase().includes(searchQuery.toLowerCase());
+                              prop.pmPublic.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              prop.pmSmart.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = filterStatus === '全部' || prop.status === filterStatus;
         return matchesSearch && matchesStatus;
       });
 
       const handleOpenScoring = (proposal) => {
         setScoringProposal(proposal);
-        setHasReadDraft(false); // 重置閱讀狀態
+        setHasReadDraft(false); 
         setImpactScoreInput(0);
         setFeasibilityScoreInput(0);
         setCommentInput('');
@@ -471,16 +486,32 @@
         }, 2000);
       };
 
+      // 將原本的 30 天改為 60 天
       const getProposalStatus = (createdAt) => {
         const today = new Date('2026-06-10'); // 模擬系統當前日期
         const creationDate = new Date(createdAt);
         const diffTime = today - creationDate;
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        const daysLeft = 30 - diffDays;
+        const daysLeft = 60 - diffDays; 
         
         if (daysLeft < 0) return { isExpired: true, daysLeft: 0 };
         return { isExpired: false, daysLeft };
       };
+
+      // 計算儀表板數據
+      const pocCount = pocProposals.length;
+      const discussionCount = otherProposals.length;
+      const reviewCount = userSubmittedProposals.length;
+      const totalProposals = pocCount + discussionCount + reviewCount;
+
+      const pocPct = totalProposals === 0 ? 0 : (pocCount / totalProposals) * 100;
+      const discPct = totalProposals === 0 ? 0 : (discussionCount / totalProposals) * 100;
+      
+      const pieGradient = `conic-gradient(
+        #10b981 0% ${pocPct}%, 
+        #3b82f6 ${pocPct}% ${pocPct + discPct}%, 
+        #94a3b8 ${pocPct + discPct}% 100%
+      )`;
 
       return (
         <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-emerald-500/30 relative flex flex-col">
@@ -573,6 +604,51 @@
                   </div>
                 </section>
 
+                {/* Dashboard Section */}
+                <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
+                  <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2 relative z-10">
+                    <PieChartIcon className="text-blue-500" /> 平台提案儀表板
+                  </h2>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 relative z-10">
+                    
+                    {/* Pie Chart */}
+                    <div className="relative w-48 h-48 rounded-full shrink-0 shadow-lg border-4 border-slate-800 flex items-center justify-center" style={{ background: pieGradient }}>
+                      <div className="absolute inset-2 bg-slate-900 rounded-full flex flex-col items-center justify-center shadow-inner">
+                        <span className="text-4xl font-extrabold text-white">{totalProposals}</span>
+                        <span className="text-xs text-slate-400 font-bold tracking-wider mt-1">總計件數</span>
+                      </div>
+                    </div>
+
+                    {/* Stats Legends */}
+                    <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                      <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 hover:border-emerald-500/50 transition-colors">
+                        <div className="text-emerald-500 text-xs font-bold mb-1.5 flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div> 
+                          首發示範專案
+                        </div>
+                        <div className="text-3xl font-bold text-white">{pocCount} <span className="text-sm font-normal text-slate-500">件</span></div>
+                      </div>
+                      
+                      <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 hover:border-blue-500/50 transition-colors">
+                        <div className="text-blue-500 text-xs font-bold mb-1.5 flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div> 
+                          研議中提案
+                        </div>
+                        <div className="text-3xl font-bold text-white">{discussionCount} <span className="text-sm font-normal text-slate-500">件</span></div>
+                      </div>
+                      
+                      <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 hover:border-slate-500 transition-colors">
+                        <div className="text-slate-400 text-xs font-bold mb-1.5 flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.8)]"></div> 
+                          待審核提案
+                        </div>
+                        <div className="text-3xl font-bold text-white">{reviewCount} <span className="text-sm font-normal text-slate-500">件</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
                 {/* Featured Proposal Section (PoC) */}
                 <section id="poc-section" className="scroll-mt-24 space-y-12">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -601,7 +677,6 @@
                               </div>
                               <div className="absolute bottom-4 left-6 pr-6 w-full">
                                 
-                                {/* Proposer Badge */}
                                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                                   <span className="bg-slate-950/80 backdrop-blur text-slate-200 text-xs px-2.5 py-1.5 rounded flex items-center gap-1 border border-slate-700 shadow-sm">
                                     <User size={14} className="text-emerald-500"/> 提案人：<span className="font-bold">{poc.proposer}</span> ({poc.role})
@@ -729,19 +804,19 @@
                   <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
                     <div>
                       <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
-                        <FileText className="text-emerald-500" /> 其他研議中提案
+                        <FileText className="text-blue-500" /> 其他研議中提案
                       </h2>
                       <p className="text-slate-400 text-sm max-w-2xl">
-                        公參組同步研擬的其他提案，以及民眾發起的構想。當提案達成<strong className="text-slate-200">「30位民眾附議、辦理一次線上說明會、上傳草案架構」</strong>三大門檻時，即可晉升為首發示範專案 (PoC)。
+                        公參組同步研擬的其他官方提案。當提案達成<strong className="text-slate-200">「30位民眾附議、辦理一次線上說明會、上傳草案架構」</strong>三大門檻時，即可晉升為首發示範專案 (PoC)。
                       </p>
                     </div>
                     <div className="text-xs px-3 py-1.5 bg-slate-800 rounded-lg text-slate-300 border border-slate-700 flex items-center gap-1 shrink-0">
-                      <Activity size={14} className="text-emerald-500" /> 等待您的評分與附議推進
+                      <Activity size={14} className="text-blue-500" /> 等待您的評分與附議推進
                     </div>
                   </div>
 
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {allOtherProposals.map((prop) => {
+                    {otherProposals.map((prop) => {
                       const IconComp = prop.icon || FileText;
                       const completedConditions = prop.progress ? [
                         prop.progress.endorsements >= 30,
@@ -750,12 +825,9 @@
                       ].filter(Boolean).length : 0;
 
                       const { isExpired, daysLeft } = getProposalStatus(prop.createdAt);
-                      
-                      // 判斷是否為民眾剛提交且還在審核中的提案
-                      const isReviewing = prop.isReviewing;
 
                       return (
-                        <div key={prop.id} className={`bg-slate-900 border ${isExpired ? 'border-slate-800 opacity-75 grayscale-[30%]' : 'border-slate-800 hover:border-slate-700 hover:shadow-lg'} transition-all duration-300 rounded-xl p-6 flex flex-col h-full group relative overflow-hidden`}>
+                        <div key={prop.id} className={`bg-slate-900 border ${isExpired ? 'border-slate-800 opacity-75 grayscale-[30%]' : 'border-slate-800 hover:border-blue-700/50 hover:shadow-lg hover:shadow-blue-900/20'} transition-all duration-300 rounded-xl p-6 flex flex-col h-full group relative overflow-hidden`}>
                           <div className={`absolute top-0 left-0 w-full h-1 ${isExpired ? 'bg-slate-600' : prop.bg} opacity-50`}></div>
                           
                           <div className="flex items-start justify-between mb-4 relative z-10">
@@ -764,11 +836,7 @@
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
                               <div className="flex items-center gap-1.5">
-                                {isReviewing ? (
-                                  <span className="inline-flex items-center gap-1 bg-blue-900/30 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-500/30 shadow-sm font-bold">
-                                    <Clock size={10} /> ⏳ 委員會審核中
-                                  </span>
-                                ) : isExpired ? (
+                                {isExpired ? (
                                   <span className="inline-flex items-center gap-1 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded border border-slate-700 shadow-sm font-bold">
                                     <Archive size={10} /> 已擱置 (未達標)
                                   </span>
@@ -781,14 +849,17 @@
                                   <Globe size={10} /> {prop.sdg}
                                 </span>
                               </div>
-                              <span className="inline-flex items-center gap-1.5 bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700 shadow-sm mt-0.5">
-                                <User size={12} className="text-slate-400" /> 
-                                <span className="font-medium text-slate-200">{prop.proposer}</span> ({prop.role})
-                              </span>
                             </div>
                           </div>
+
+                          <div className="flex flex-col gap-1.5 mb-3">
+                             <span className="inline-flex items-center gap-1.5 bg-slate-800/80 text-slate-300 text-xs px-2 py-1 rounded border border-slate-700 shadow-sm w-fit">
+                               <User size={12} className="text-slate-400" /> 
+                               <span className="font-medium text-slate-200">{prop.proposer}</span> ({prop.role})
+                             </span>
+                          </div>
                           
-                          <h3 className={`text-lg font-bold mb-2 transition-colors ${isExpired ? 'text-slate-400' : 'text-white group-hover:text-emerald-400'}`}>{prop.title}</h3>
+                          <h3 className={`text-lg font-bold mb-2 transition-colors ${isExpired ? 'text-slate-400' : 'text-white group-hover:text-blue-400'}`}>{prop.title}</h3>
                           
                           {/* 提案附議民眾評分數據 */}
                           <div className="flex items-center gap-4 mb-4 bg-slate-950/50 p-2 rounded-lg border border-slate-800">
@@ -806,43 +877,37 @@
                           <p className="text-slate-400 text-sm mb-4 flex-grow leading-relaxed">{prop.content}</p>
                           
                           {/* 晉升示範專案進度條 */}
-                          {!isReviewing && (
-                            <div className="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 mb-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                                  <Target size={12} className="text-emerald-500"/> 晉升示範專案進度
+                          <div className="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 mb-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                <Target size={12} className="text-blue-500"/> 晉升示範專案進度
+                              </span>
+                              <span className={`text-xs font-bold ${isExpired ? 'text-slate-500' : 'text-blue-500'}`}>{completedConditions}/3</span>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-xs">
+                                {prop.progress.endorsements >= 30 ? <CheckCircle2 size={14} className="text-blue-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
+                                <span className={prop.progress.endorsements >= 30 ? "text-slate-300" : "text-slate-500"}>
+                                  累積 30 位民眾附議評分 ({prop.progress.endorsements}/30)
                                 </span>
-                                <span className={`text-xs font-bold ${isExpired ? 'text-slate-500' : 'text-emerald-500'}`}>{completedConditions}/3</span>
                               </div>
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-xs">
-                                  {prop.progress.endorsements >= 30 ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
-                                  <span className={prop.progress.endorsements >= 30 ? "text-slate-300" : "text-slate-500"}>
-                                    累積 30 位民眾附議評分 ({prop.progress.endorsements}/30)
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs">
-                                  {prop.progress.briefingCompleted ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
-                                  <span className={prop.progress.briefingCompleted ? "text-slate-300" : "text-slate-500"}>
-                                    辦理線上說明會完成
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs">
-                                  {prop.progress.draftUploaded ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
-                                  <span className={prop.progress.draftUploaded ? "text-slate-300" : "text-slate-500"}>
-                                    上傳本次提案草案架構
-                                  </span>
-                                </div>
+                              <div className="flex items-center gap-2 text-xs">
+                                {prop.progress.briefingCompleted ? <CheckCircle2 size={14} className="text-blue-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
+                                <span className={prop.progress.briefingCompleted ? "text-slate-300" : "text-slate-500"}>
+                                  辦理線上說明會完成
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs">
+                                {prop.progress.draftUploaded ? <CheckCircle2 size={14} className="text-blue-500 shrink-0"/> : <Circle size={14} className="text-slate-600 shrink-0"/>}
+                                <span className={prop.progress.draftUploaded ? "text-slate-300" : "text-slate-500"}>
+                                  上傳本次提案草案架構
+                                </span>
                               </div>
                             </div>
-                          )}
+                          </div>
 
                           {/* Action Buttons */}
-                          {isReviewing ? (
-                            <div className="mt-auto bg-blue-900/20 p-3 rounded-lg border border-blue-500/30 text-center">
-                              <p className="text-xs text-blue-400">{prop.feedback}</p>
-                            </div>
-                          ) : isExpired ? (
+                          {isExpired ? (
                             <button disabled className="mt-auto w-full py-2.5 bg-slate-900 text-slate-500 border border-slate-800 text-sm font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2 transition-all">
                               <Archive size={16} /> 提案已過期擱置
                             </button>
@@ -850,13 +915,13 @@
                             <div className="mt-auto flex flex-col sm:flex-row gap-2">
                               <button 
                                 onClick={() => handleOpenScoring(prop)}
-                                className="flex-1 py-2.5 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white border border-slate-700 hover:border-emerald-500 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
+                                className="flex-1 py-2.5 bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white border border-slate-700 hover:border-blue-500 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
                               >
                                 <PenTool size={14} /> 閱讀草案與評分
                               </button>
                               <button 
                                 onClick={() => handleOpenRegistration(prop)}
-                                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
+                                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-900/30"
                               >
                                 <Video size={14} /> 報名說明會
                               </button>
@@ -867,6 +932,61 @@
                     })}
                   </div>
                 </section>
+
+                {/* Reviewing Proposals Grid (審核中提案) */}
+                <section id="reviewing-proposals" className="pt-8 border-t border-slate-800 scroll-mt-24">
+                  <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
+                        <Clock className="text-slate-400" /> 其他審核中提案
+                      </h2>
+                      <p className="text-slate-400 text-sm max-w-2xl">
+                        適用於民眾發起之新提案。目前由青諮委員會進行初步盤點與審核，通過後將移至「研議中提案」啟動 60 天連署挑戰。
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {userSubmittedProposals.map((prop) => {
+                      const IconComp = prop.icon || FileText;
+                      return (
+                        <div key={prop.id} className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 flex flex-col h-full group relative overflow-hidden">
+                          <div className="flex items-start justify-between mb-4 relative z-10">
+                            <div className={`p-3 rounded-xl ${prop.bg} ${prop.borderColor} border`}>
+                              <IconComp className={prop.color} size={24} />
+                            </div>
+                            <div className="flex flex-col items-end gap-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-700 shadow-sm font-bold">
+                                  <Clock size={10} /> ⏳ 委員會審核中
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border text-emerald-400 bg-emerald-900/30 border-emerald-500/20">
+                                  <Globe size={10} /> {prop.sdg}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-1.5 mb-3">
+                             <span className="inline-flex items-center gap-1.5 bg-slate-800/80 text-slate-300 text-xs px-2 py-1 rounded border border-slate-700 shadow-sm w-fit">
+                               <User size={12} className="text-slate-400" /> 
+                               <span className="font-medium text-slate-200">{prop.proposer}</span> ({prop.role})
+                             </span>
+                          </div>
+                          
+                          <h3 className="text-lg font-bold mb-2 text-slate-300">{prop.title}</h3>
+                          
+                          <p className="text-slate-400 text-sm mb-4 flex-grow leading-relaxed">{prop.content}</p>
+                          
+                          <div className="mt-auto bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 text-center">
+                            <p className="text-xs text-slate-400">{prop.feedback}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
               </div>
             )}
 
@@ -1061,9 +1181,9 @@
                     </div>
                     <div className="md:w-2/3 space-y-4">
                       <span className="text-xs font-bold text-amber-500 tracking-wider uppercase bg-amber-500/10 px-2 py-1 rounded">Gather Support</span>
-                      <h3 className="text-2xl font-bold text-white">號召連署：30天挑戰</h3>
+                      <h3 className="text-2xl font-bold text-white">號召連署：60天挑戰</h3>
                       <p className="text-slate-400 text-sm leading-relaxed">
-                        提案上架後即進入「研議中」狀態，您將有 30 天的時間透過社群網絡進行推廣與遊說，達成三大門檻：
+                        提案上架後即進入「研議中」狀態，您將有 60 天的時間透過社群網絡進行推廣與遊說，達成三大門檻：
                       </p>
                       <ul className="text-sm text-slate-400 space-y-2 bg-slate-950/50 p-3 rounded-lg border border-slate-800">
                         <li className="flex items-center gap-2"><Target size={14} className="text-amber-400" /> 累積滿 30 位市民附議與評分</li>
@@ -1088,7 +1208,7 @@
                         成功闖關後，提案將晉升為「首發示範專案 (PoC)」。青諮委將啟動跨局處協調，並爭取於 2026/10/15 直接向市長進行正式提報！
                       </p>
                       <div className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-                        <Archive size={12} className="text-slate-400"/> 若30天內未達標，提案將被「擱置」保留歷史紀錄。
+                        <Archive size={12} className="text-slate-400"/> 若60天內未達標，提案將被「擱置」保留歷史紀錄。
                       </div>
                     </div>
                   </div>
@@ -1422,13 +1542,13 @@
                       </div>
                       <h4 className="text-2xl font-bold text-white mb-3">申請已送出！</h4>
                       <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
-                        我們已經收到您的提案構想。經過青年諮詢委員會檢視格式無誤後，即可正式在「提案大廳」刊登，開始您的 30 天連署挑戰。
+                        我們已經收到您的提案構想。經過青年諮詢委員會檢視格式無誤後，即可正式在「提案大廳」刊登，開始您的 60 天連署挑戰。
                       </p>
                       <button 
                         onClick={() => {
                           setShowSubmitModal(false);
                           setActiveTab('home');
-                          setTimeout(() => document.getElementById('other-proposals').scrollIntoView({ behavior: 'smooth' }), 300);
+                          setTimeout(() => document.getElementById('reviewing-proposals').scrollIntoView({ behavior: 'smooth' }), 300);
                         }}
                         className="mt-8 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors border border-slate-700 font-bold text-sm"
                       >
@@ -1446,7 +1566,7 @@
                       <div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl flex items-start gap-3">
                         <Lightbulb size={20} className="text-emerald-400 shrink-0 mt-0.5" />
                         <div className="text-sm text-slate-300 leading-relaxed">
-                          請填寫下方表單以建立初步提案草案。送出後將由委員會進行審核，以確保符合平台規範。刊登後您將有 30 天的時間爭取附議。
+                          請填寫下方表單以建立初步提案草案。送出後將由委員會進行審核，以確保符合平台規範。刊登後您將有 60 天的時間爭取附議。
                         </div>
                       </div>
 
