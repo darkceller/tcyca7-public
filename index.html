@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>桃園公民沙盒開源公參平台</title>
+  <title>桃園市公民開源公參平台</title>
   
   <!-- 載入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 載入更穩定的 React 與 ReactDOM (cdnjs) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <!-- 載入最穩定的 React 與 ReactDOM (unpkg) -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
   
   <!-- 載入 Babel 以解析 JSX -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <!-- 載入 Lucide Icons (指定更穩定的版本) -->
-  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.344.0/dist/umd/lucide-react.min.js" crossorigin="anonymous"></script>
+  <!-- 載入 Lucide Icons (指定確保會釋出全域變數的 0.292.0 穩定版) -->
+  <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide-react.min.js"></script>
 
   <style>
     /* 隱藏卷軸但保留滑動功能 */
@@ -46,14 +46,14 @@
     window.addEventListener('error', function(event) {
       const root = document.getElementById('root');
       if (root) {
-        root.innerHTML = '<div style="background:#0f172a; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem;"><div style="background:#1e293b; border:1px solid #ef4444; border-radius:0.75rem; padding:2rem; max-width:600px; width:100%; color:#f87171;"><h2 style="font-size:1.5rem; font-weight:bold; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">⚠️ 系統載入發生錯誤</h2><p style="color:#cbd5e1; margin-bottom:1rem; line-height:1.5;">請截圖此畫面或複製下方錯誤代碼。這通常是因為網路阻擋了外部資源，或語法有誤。</p><div style="background:#020617; padding:1rem; border-radius:0.5rem; font-family:monospace; font-size:0.875rem; word-wrap:break-word; overflow-x:auto;">' + event.message + ' (Line: ' + event.lineno + ')</div></div></div>';
+        root.innerHTML = '<div style="background:#0f172a; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem;"><div style="background:#1e293b; border:1px solid #ef4444; border-radius:0.75rem; padding:2rem; max-width:600px; width:100%; color:#f87171;"><h2 style="font-size:1.5rem; font-weight:bold; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">⚠️ 系統載入發生錯誤</h2><p style="color:#cbd5e1; margin-bottom:1rem; line-height:1.5;">這通常是因為網路阻擋了外部資源，或 CDN 載入失敗。</p><div style="background:#020617; padding:1rem; border-radius:0.5rem; font-family:monospace; font-size:0.875rem; word-wrap:break-word; overflow-x:auto;">' + event.message + ' (Line: ' + event.lineno + ')</div><button onclick="window.location.reload(true)" style="margin-top:1rem; background:#ef4444; color:white; padding:0.5rem 1rem; border-radius:0.5rem; border:none; cursor:pointer;">強制重新整理</button></div></div>';
       }
     });
   </script>
 </head>
 <body class="bg-slate-950 text-slate-200">
   
-  <!-- React 應用程式的掛載點 (加入載入中畫面，避免全黑) -->
+  <!-- React 應用程式的掛載點 -->
   <div id="root">
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; background:#020617; color:#10b981; font-family:sans-serif;">
       <div style="width:40px; height:40px; border:4px solid #10b981; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
@@ -66,6 +66,9 @@
   <!-- React 元件與邏輯 -->
   <script type="text/babel">
     const { useState } = React;
+    
+    // 確保 LucideReact 有被正確載入，否則給予空物件避免解構失敗
+    const lucide = window.lucideReact || {};
     const { 
       Leaf, Users, FileText, CheckCircle2, 
       MessageSquare, AlertTriangle, Lightbulb,
@@ -75,9 +78,20 @@
       TrendingUp, Target, Star, Circle, X, 
       Search, Filter, CheckCircle, AlertCircle, XCircle, Clock,
       BookOpen, Globe, Timer, Archive, Rocket, Send, Cpu, Database
-    } = window.lucideReact || lucideReact; // 確保取得 Lucide
+    } = lucide;
 
+    // 建立一個保護元件，如果圖示庫載入失敗可以顯示提示
     function App() {
+      if (!window.lucideReact) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-slate-200 p-6 text-center">
+            <h1 className="text-2xl font-bold text-rose-500 mb-4">圖示庫 (Lucide) 載入失敗</h1>
+            <p className="text-slate-400 mb-6">您的網路環境可能阻擋了 unpkg.com 的 CDN 資源，或載入超時。</p>
+            <button onClick={() => window.location.reload(true)} className="px-6 py-2 bg-emerald-600 rounded-lg font-bold">強制重新整理</button>
+          </div>
+        );
+      }
+
       const [activeTab, setActiveTab] = useState('home');
       const [scoringProposal, setScoringProposal] = useState(null);
       
